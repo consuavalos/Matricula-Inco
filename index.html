@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Sistema de Matrícula INCO</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="pantalla-login">
+    <section class="card-login">
+
+      <!-- CAMBIA ESTE NOMBRE SI TU LOGO NUEVO TIENE OTRO NOMBRE -->
+      <img src="img/escudo-inc.png" alt="Escudo Instituto Nacional de Comercio" class="logo-login">
+
+      <h1 class="titulo-principal">Sistema de Matrícula 2027</h1>
+      <h2 class="subtitulo-principal">Instituto Nacional de Comercio</h2>
+
+      <div class="bloque-bienvenida">
+        <h3>Bienvenido</h3>
+        <p class="texto-institucional">
+         Ser en Educación Media, la institución rectora del área Comercial como el Bachiller Técnico Vocacional Contable, 
+         Desarrollo de Software, Servicios Turísticos", Bachillerato General con diplomado en Gastronomía, 
+         diplomado en Contabilidad Básica e Informática Bachillerato en Modalidades Flexibles. 
+         Bachilleres con capacidad competitiva al mundo empresarial y emprendedor; 
+         además orientarlos para que puedan elegir una carrera de Educación Superior que les permita lograr el éxito personal y profesional.
+      </div>
+
+      <div class="opciones-ingreso">
+        <!-- Ahora ambos botones abren un modal en vez de navegar directo -->
+        <button type="button" class="btn-ingreso btn-ingresar" id="btnIngresar">
+          Ingresar
+        </button>
+
+        <button type="button" class="btn-ingreso btn-admin" id="btnAdministrador">
+          Administrador
+        </button>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ================= MODAL: INGRESAR (Nuevo) ================= -->
+  <div class="modal-overlay oculto" id="modalIngresar" aria-hidden="true">
+    <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloModalIngresar">
+      <button type="button" class="modal-cerrar" data-cerrar="modalIngresar" aria-label="Cerrar">&times;</button>
+      <h3 id="tituloModalIngresar" class="modal-titulo">Tipo de ingreso</h3>
+      <p class="modal-subtitulo">Seleccione una opción para continuar</p>
+
+<div class="modal-opciones">
+
+    <button
+        type="button"
+        class="btn-ingreso btn-tipo-nuevo"
+        id="btnNuevoIngreso">
+        Nuevo Ingreso
+    </button>
+
+    <button
+        type="button"
+        class="btn-ingreso btn-docente"
+        id="btnDocente">
+        Docente
+    </button>
+
+</div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADMINISTRADOR (Usuario / Contraseña) ================= -->
+  <div class="modal-overlay oculto" id="modalAdministrador" aria-hidden="true">
+    <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloModalAdmin">
+      <button type="button" class="modal-cerrar" data-cerrar="modalAdministrador" aria-label="Cerrar">&times;</button>
+      <h3 id="tituloModalAdmin" class="modal-titulo">Acceso Administrador</h3>
+      <p class="modal-subtitulo">Ingrese sus credenciales</p>
+
+      <form class="admin-login" id="formAdministrador" novalidate>
+        <label for="usuarioAdmin">Usuario</label>
+        <input type="text" id="usuarioAdmin" name="usuario" autocomplete="username" required>
+
+        <label for="passwordAdmin">Contraseña</label>
+        <input type="password" id="passwordAdmin" name="password" autocomplete="current-password" required>
+
+        <p class="mensaje-login" id="mensajeAdmin"></p>
+
+        <button type="submit" class="btn-ingreso btn-admin">Acceder</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: DOCENTE (Usuario / Contraseña) ================= -->
+  <div class="modal-overlay oculto" id="modalDocente" aria-hidden="true">
+    <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloModalDocente">
+      <button type="button" class="modal-cerrar" data-cerrar="modalDocente" aria-label="Cerrar">&times;</button>
+      <h3 id="tituloModalDocente" class="modal-titulo">Acceso Docente</h3>
+      <p class="modal-subtitulo">Ingrese sus credenciales</p>
+
+      <form class="admin-login" id="formDocente" novalidate>
+        <label for="usuarioDocente">Usuario</label>
+        <input type="text" id="usuarioDocente" name="usuario" autocomplete="username" required>
+
+        <label for="passwordDocente">Contraseña</label>
+        <input type="password" id="passwordDocente" name="password" autocomplete="current-password" required>
+
+        <p class="mensaje-login" id="mensajeDocente"></p>
+
+        <button type="submit" class="btn-ingreso btn-docente">Acceder</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
