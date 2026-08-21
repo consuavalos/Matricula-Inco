@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Administrador - INCO</title>
+
+  <link rel="stylesheet" href="admin.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+
+    /* ============================================
+       Botones de acción
+       ============================================ */
+
+    .acciones-documento {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .acciones-documento button,
+    .btn-imprimir,
+    .btn-descargar,
+    .btn-Modificar {
+      font-size: 16px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    /* ============================================
+       Campos habilitados durante edición
+       ============================================ */
+
+    .campo-editable {
+      background-color: #fffde7 !important;
+      border: 1.5px solid #f9a825 !important;
+      color: #1a1a1a !important;
+      cursor: text;
+    }
+
+    /* ============================================
+       Vista previa de foto
+       ============================================ */
+
+    .foto-estudiante-contenedor {
+      margin-bottom: 16px;
+    }
+
+    .foto-estudiante-preview {
+      width: 110px;
+      height: 140px;
+      object-fit: cover;
+      border: 2px solid #1a3a2b;
+      border-radius: 6px;
+    }
+
+    /* ============================================
+       Tabla de reportes
+       ============================================ */
+
+    .tabla-reportes {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .tabla-reportes thead {
+      background: #1a3a2b;
+    }
+
+    .tabla-reportes thead th {
+      color: #fff;
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tabla-reportes tbody tr {
+      border-bottom: 1px solid #eee;
+      transition: background 0.15s;
+    }
+
+    .tabla-reportes tbody tr:nth-child(even) {
+      background: #f7faf8;
+    }
+
+    .tabla-reportes tbody tr:hover {
+      background: #fff3e0;
+    }
+
+    .tabla-reportes td {
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #1a1a1a;
+      vertical-align: middle;
+    }
+
+    .badge-grado {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-especialidad {
+      display: inline-block;
+      background: #fff3e0;
+      color: #e65100;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .btn-ver-fila {
+      background: #1a3a2b;
+      color: #fff;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .btn-ver-fila:hover {
+      background: #2e5c43;
+    }
+
+    /* ============================================
+       Botones de reportes (buscar / limpiar)
+       ============================================ */
+
+    .btn-buscar-reporte {
+      background: #1a3a2b;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .btn-buscar-reporte:hover {
+      background: #2e5c43;
+    }
+
+    .btn-limpiar-reporte {
+      background: #fff;
+      color: #1a3a2b;
+      border: 1.5px solid #1a3a2b;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 8px;
+      margin-left: 10px;
+    }
+
+    .btn-limpiar-reporte:hover {
+      background: #f1f6f3;
+    }
+
+    /* ============================================
+       Botón Expediente
+       ============================================ */
+
+    .btn-expediente {
+      background: #e65100;
+      color: #fff;
+      border: none;
+    }
+
+    .btn-expediente:hover {
+      background: #bf3f00;
+    }
+
+    /* ============================================
+       Modal de Expediente
+       ============================================ */
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.activo {
+      display: flex;
+    }
+
+    .modal-expediente {
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 760px;
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-expediente-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1a3a2b;
+      color: #fff;
+      padding: 16px 22px;
+      border-radius: 12px 12px 0 0;
+      position: sticky;
+      top: 0;
+    }
+
+    .modal-expediente-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .modal-cerrar {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .modal-cerrar:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .modal-expediente-body {
+      padding: 22px;
+    }
+
+    .modal-estudiante-nombre {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .doc-checklist {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .doc-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #f7faf8;
+      border: 1px solid #eee;
+      font-size: 14px;
+    }
+
+    .doc-estado {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .doc-estado.entregado {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .doc-estado.pendiente {
+      background: #ffebee;
+      color: #d32f2f;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <script>
+
+    // Protección simple de la página
+    // Solo entra quien inició sesión como Administrador
+
+    if (sessionStorage.getItem('rolUsuario') !== 'administrador') {
+      window.location.href = '../index.html';
+    }
+
+  </script>
+
+
+  <div class="admin-layout">
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
+
+    <aside class="sidebar">
+
+      <div class="sidebar-top">
+
+        <img
+          src="../img/escudo-inc.png"
+          alt="Escudo INC"
+          class="logo-admin"
+        >
+
+        <h2>Sistema de Matrícula</h2>
+
+        <p>Instituto Nacional de Comercio</p>
+
+
+        <nav class="menu">
+
+          <a
+            href="#"
+            class="activo"
+            onclick="mostrarMatriculas()"
+          >
+            Buscar matrícula
+          </a>
+
+          <a
+            href="#"
+            onclick="mostrarReportes()"
+          >
+            Reportes
+          </a>
+
+        </nav>
+
+      </div>
+
+
+      <a
+        href="#"
+        class="btn-salir"
+        onclick="cerrarSesion()"
+      >
+        Cerrar sesión
+      </a>
+
+    </aside>
+
+
+    <!-- =====================================================
+         CONTENIDO PRINCIPAL
+         ===================================================== -->
+
+    <main class="admin-main">
+
+
+      <!-- ===================================================
+           CABECERA
+           =================================================== -->
+
+      <section class="admin-header">
+
+        <h1>Administración</h1>
+
+        <p>
+          Consulta y administración de matrículas
+          del Instituto Nacional de Comercio
+        </p>
+
+      </section>
+
+
+      <!-- ===================================================
+           BUSCAR MATRÍCULA
+           =================================================== -->
+
+      <section
+        class="card-busqueda"
+        id="seccionMatricula"
+      >
+
+        <h2>Buscar matrícula</h2>
+
+        <p>
+          Ingrese el NIE del estudiante
+        </p>
+
+
+        <div class="busqueda-box">
+
+          <input
+            type="text"
+            id="buscarInput"
+            placeholder="Ej. NIE: 123456789"
+          >
+
+          <button onclick="buscarMatricula()">
+            Buscar
+          </button>
+
+        </div>
+
+
+        <p
+          id="mensajeBusqueda"
+          class="mensaje-admin"
+        ></p>
+
+
+        <!-- Botones de acción -->
+
+        <div class="acciones-documento">
+
+          <button
+            onclick="imprimirDocumento()"
+            class="btn-imprimir"
+          >
+            🖨️ Imprimir
+          </button>
+
+
+          <button
+            onclick="descargarPDF()"
+            class="btn-descargar"
+          >
+            📥 Descargar PDF
+          </button>
+
+
+          <button
+            onclick="modificarcampos()"
+            class="btn-Modificar"
+          >
+            Modificar
+          </button>
+
+
+          <button
+            onclick="verExpediente()"
+            class="btn-expediente"
+          >
+            🗂️ Expediente
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           SECCIÓN REPORTES
+           =================================================== -->
+
+      <section
+        class="card-busqueda"
+        id="seccionReportes"
+        style="display: none;"
+      >
+
+        <h2>
+          Reportes de Matrículas
+        </h2>
+
+        <p>
+          Filtre por NIE, año/grado y especialidad
+        </p>
+
+
+        <!-- =================================================
+             FILTROS
+             ================================================= -->
+
+        <div class="filtros-reporte">
+
+
+          <!-- NIE -->
+
+          <div class="campo">
+
+            <label for="filtroNie">
+              NIE
+            </label>
+
+            <input
+              type="text"
+              id="filtroNie"
+              placeholder="Ej. NIE: 123456789"
+            >
+
+          </div>
+
+
+          <!-- AÑO / GRADO -->
+
+          <div class="campo">
+
+            <label for="filtroGrado">
+              Año / Grado
+            </label>
+
+            <select id="filtroGrado">
+
+              <option value="">
+                Todos
+              </option>
+
+              <option value="Primer Año">
+                Primero
+              </option>
+
+              <option value="Segundo Año">
+                Segundo
+              </option>
+
+              <option value="Tercer Año">
+                Tercero
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- ESPECIALIDAD -->
+
+          <div class="campo">
+
+            <label for="filtroEspecialidad">
+              Especialidad
+            </label>
+
+            <select id="filtroEspecialidad">
+
+              <option value="">
+                Todas
+              </option>
+
+              <option value="Bachillerato General">
+                General
+              </option>
+
+              <option value="Administrativo Contable">
+                Administración Contable
+              </option>
+
+              <option value="Desarrollo de Software">
+                Desarrollo de Software
+              </option>
+
+              <option value="Servicios Turísticos">
+                Servicios Turísticos
+              </option>
+
+            </select>
+
+          </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             BOTONES
+             ================================================= -->
+
+        <button
+          onclick="buscarReportes()"
+          class="btn-buscar-reporte"
+        >
+          Buscar
+        </button>
+
+
+        <button
+          onclick="limpiarReportes()"
+          class="btn-limpiar-reporte"
+        >
+          Limpiar filtros
+        </button>
+
+
+        <p
+          id="mensajeReportes"
+          class="mensaje-admin"
+        ></p>
+
+
+        <!-- =================================================
+             TABLA
+             ================================================= -->
+
+        <div
+          id="tablaReportesContenedor"
+          style="display: none; margin-top: 20px;"
+        >
+
+          <table class="tabla-reportes">
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  Ficha
+                </th>
+
+                <th>
+                  NIE
+                </th>
+
+                <th>
+                  Nombre completo
+                </th>
+
+                <th>
+                  Grado
+                </th>
+
+                <th>
+                  Especialidad
+                </th>
+
+                <th>
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody id="cuerpoTablaReportes"></tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           RESULTADOS DE BÚSQUEDA
+           =================================================== -->
+
+      <section
+        id="resultadosBusqueda"
+        style="display: none; margin-top: 30px;"
+      >
+
+
+        <!-- Contenido para imprimir / PDF -->
+
+        <div id="contenidoImprimir"></div>
+
+
+        <div class="card-resultado">
+
+
+          <h3>
+            📋 Datos de la Matrícula
+          </h3>
+
+
+          <!-- FOTO -->
+
+          <div
+            id="r_fotoContenedor"
+            class="foto-estudiante-contenedor"
+            style="display: none;"
+          >
+
+            <img
+              id="r_fotoEstudiante"
+              alt="Foto del estudiante"
+              class="foto-estudiante-preview"
+            >
+
+          </div>
+
+
+          <!-- =================================================
+               DATOS DE MATRÍCULA
+               ================================================= -->
+
+          <div class="grid-2">
+
+            <div class="campo">
+
+              <label>
+                Número de Ficha
+              </label>
+
+              <input
+                type="text"
+                id="r_numeroFicha"
+                readonly
+                class="campo-lectura"
+              >
+
+            </div>
+
+
+            <div class="campo">
+
+              <label>
+                Fecha de Matrícula
+              </label>
+
+              <input
+                type="text"
+                id="r_fechaMatricula"
+                readonly
+                class="campo-lectura"
+              >
+
+            </div>
+
+
+            <div class="campo">
+
+              <label>
+                NIE
+              </label>
+
+              <input
+                type="text"
+                id="r_nie"
+                readonly
+                class="campo-lectura"
+              >
+
+            </div>
+
+          </div>
+
+
+          <!-- =================================================
+               DATOS DEL ESTUDIANTE
+               ================================================= -->
+
+          <h4 style="margin-top: 20px; color: #1a3a2b;">
+            👤 Datos del Estudiante
+          </h4>
+
+
+          <div class="grid-2">
+
+            <div class="campo">
+              <label>Primer Apellido</label>
+              <input type="text" id="r_primerApellido" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Segundo Apellido</label>
+              <input type="text" id="r_segundoApellido" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Primer Nombre</label>
+              <input type="text" id="r_primerNombre" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Segundo Nombre</label>
+              <input type="text" id="r_segundoNombre" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Fecha de Nacimiento</label>
+              <input type="text" id="r_fechaNacimiento" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Edad</label>
+              <input type="text" id="r_edad" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Sexo</label>
+              <input type="text" id="r_sexo" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Teléfono</label>
+              <input type="text" id="r_telefonoEstudiante" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo campo-full">
+              <label>Correo Estudiantil</label>
+              <input type="text" id="r_correoEstudiantil" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo campo-full">
+              <label>Correo Personal</label>
+              <input type="text" id="r_correoPersonal" readonly class="campo-lectura">
+            </div>
+
+          </div>
+
+
+          <!-- =================================================
+               INFORMACIÓN ACADÉMICA
+               ================================================= -->
+
+          <h4 style="margin-top: 20px; color: #1a3a2b;">
+            📚 Información Académica
+          </h4>
+
+
+          <div class="grid-2">
+
+            <div class="campo">
+              <label>Grado</label>
+              <input type="text" id="r_grado" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Especialidad</label>
+              <input type="text" id="r_especialidad" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Último Año Aprobado</label>
+              <input type="text" id="r_ultimoAnioAprobado" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo campo-full">
+              <label>Centro Educativo Anterior</label>
+              <input type="text" id="r_colegioAnterior" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>¿Tiene hermanos en este Centro Educativo?</label>
+              <input type="text" id="r_hermanosCentroeducativo" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Nombre del Hermano/a</label>
+              <input type="text" id="r_nombresHermanos" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Nivel Académico del Hermano/a</label>
+              <input type="text" id="r_nivelAcademico" readonly class="campo-lectura">
+            </div>
+
+          </div>
+
+
+          <!-- =================================================
+               PARTIDA DE NACIMIENTO
+               ================================================= -->
+
+          <h4 style="margin-top: 20px; color: #1a3a2b;">
+            📜 Partida de Nacimiento
+          </h4>
+
+
+          <div class="grid-2">
+
+            <div class="campo">
+              <label>Partida N°</label>
+              <input type="text" id="r_partidaNumero" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Folio</label>
+              <input type="text" id="r_folio" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Tomo</label>
+              <input type="text" id="r_tomo" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Libro</label>
+              <input type="text" id="r_libro" readonly class="campo-lectura">
+            </div>
+
+          </div>
+
+
+          <!-- =================================================
+               RECURSOS
+               ================================================= -->
+
+          <h4 style="margin-top: 20px; color: #1a3a2b;">
+            🎒 Recursos
+          </h4>
+
+
+          <div class="grid-2">
+
+            <div class="campo">
+              <label>¿Posee computadora MINEDUCYT?</label>
+              <input type="text" id="r_computadoraMineducyt" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>¿Posee acceso a internet?</label>
+              <input type="text" id="r_internet" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Talla Camisa</label>
+              <input type="text" id="r_tallaCamisa" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Talla Pantalón</label>
+              <input type="text" id="r_tallaPantalon" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Talla Blusa</label>
+              <input type="text" id="r_tallaBlusa" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Talla Falda</label>
+              <input type="text" id="r_tallaFalda" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Talla Zapatos</label>
+              <input type="text" id="r_tallaZapatos" readonly class="campo-lectura">
+            </div>
+
+          </div>
+
+
+          <!-- =================================================
+               SALUD
+               ================================================= -->
+
+          <h4 style="margin-top: 20px; color: #1a3a2b;">
+            🩺 Salud
+          </h4>
+
+
+          <div class="grid-2">
+
+            <div class="campo">
+              <label>Vacuna COVID-19</label>
+              <input type="text" id="r_vacunaCovid" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>¿Padece alguna enfermedad?</label>
+              <input type="text" id="r_enfermedad" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>¿Cuál enfermedad?</label>
+              <input type="text" id="r_cualEnfermedad" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Medicamento que utiliza</label>
+              <input type="text" id="r_medicamento" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo campo-full">
+              <label>Otros</label>
+              <input type="text" id="r_otros" readonly class="campo-lectura">
+            </div>
+
+          </div>
+
+
+          <!-- =================================================
+               RESPONSABLE
+               ================================================= -->
+
+          <h4 style="margin-top: 20px; color: #1a3a2b;">
+            👨‍👩‍👦 Responsable
+          </h4>
+
+
+          <div class="grid-2">
+
+            <div class="campo">
+              <label>Nombre del Responsable</label>
+              <input type="text" id="r_responsable" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Parentesco</label>
+              <input type="text" id="r_parentesco" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>DUI</label>
+              <input type="text" id="r_duiResponsable" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Teléfono</label>
+              <input type="text" id="r_telefonoResponsable" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Whatsapp</label>
+              <input type="text" id="r_whatsappResponsable" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo campo-full">
+              <label>Correo</label>
+              <input type="text" id="r_correoResponsable" readonly class="campo-lectura">
+            </div>
+
+          </div>
+
+
+          <!-- =================================================
+               MADRE
+               ================================================= -->
+
+          <h4 style="margin-top: 20px; color: #1a3a2b;">
+            👩 Datos de la Madre
+          </h4>
+
+
+          <div class="grid-2">
+
+            <div class="campo campo-full">
+              <label>Nombre Completo</label>
+              <input type="text" id="r_madreNombre" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Ocupación</label>
+              <input type="text" id="r_madreOcupacion" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Lugar de Trabajo</label>
+              <input type="text" id="r_madreLugarTrabajo" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Número de DUI</label>
+              <input type="text" id="r_madreDui" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Lugar de Nacimiento</label>
+              <input type="text" id="r_madreLugarNacimiento" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Fecha de Nacimiento</label>
+              <input type="text" id="r_madreFechaNacimiento" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Número de Celular</label>
+              <input type="text" id="r_madreCelular" readonly class="campo-lectura">
+            </div>
+
+          </div>
+
+
+          <!-- =================================================
+               PADRE
+               ================================================= -->
+
+          <h4 style="margin-top: 20px; color: #1a3a2b;">
+            👨 Datos del Padre
+          </h4>
+
+
+          <div class="grid-2">
+
+            <div class="campo campo-full">
+              <label>Nombre Completo</label>
+              <input type="text" id="r_padreNombre" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Ocupación</label>
+              <input type="text" id="r_padreOcupacion" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Lugar de Trabajo</label>
+              <input type="text" id="r_padreLugarTrabajo" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Número de DUI</label>
+              <input type="text" id="r_padreDui" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Lugar de Nacimiento</label>
+              <input type="text" id="r_padreLugarNacimiento" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Fecha de Nacimiento</label>
+              <input type="text" id="r_padreFechaNacimiento" readonly class="campo-lectura">
+            </div>
+
+            <div class="campo">
+              <label>Número de Celular</label>
+              <input type="text" id="r_padreCelular" readonly class="campo-lectura">
+            </div>
+
+          </div>
+
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+
+  <!-- =====================================================
+       MODAL: EXPEDIENTE DE DOCUMENTOS (registrado por Docente)
+       ===================================================== -->
+
+  <div
+    id="modalExpediente"
+    class="modal-overlay"
+    onclick="if (event.target === this) cerrarExpediente()"
+  >
+
+    <div class="modal-expediente">
+
+      <div class="modal-expediente-header">
+
+        <h3>🗂️ Expediente de Documentos</h3>
+
+        <button
+          class="modal-cerrar"
+          onclick="cerrarExpediente()"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
+
+      </div>
+
+
+      <div class="modal-expediente-body">
+
+        <p
+          id="modalExpedienteEstudiante"
+          class="modal-estudiante-nombre"
+        ></p>
+
+
+        <div
+          id="expedienteVacio"
+          class="mensaje-admin"
+          style="display: none;"
+        >
+          Este estudiante aún no tiene expediente
+          de documentos registrado por un docente.
+        </div>
+
+
+        <div
+          id="expedienteContenido"
+          style="display: none;"
+        >
+
+          <div class="grid-2" style="margin-bottom: 18px;">
+
+            <div class="campo">
+              <label>Tipo de indicaciones aplicadas</label>
+              <p
+                id="exp_tipoEtiqueta"
+                style="margin:6px 0 0; font-weight:600; color:#1a3a2b;"
+              ></p>
+            </div>
+
+            <div class="campo">
+              <label>Última actualización</label>
+              <p
+                id="exp_fechaActualizacion"
+                style="margin:6px 0 0; font-weight:600; color:#1a3a2b;"
+              ></p>
+            </div>
+
+          </div>
+
+
+          <h4 style="color:#1a3a2b;">📋 Documentos requeridos</h4>
+          <div id="exp_listaPrincipal" class="doc-checklist"></div>
+
+
+          <h4 style="margin-top:20px; color:#1a3a2b;">📸 Indicaciones de presentación</h4>
+          <div id="exp_listaGeneral" class="doc-checklist"></div>
+
+
+          <div class="campo campo-full" style="margin-top:18px;">
+            <label>Observaciones adicionales (del docente)</label>
+            <textarea
+              id="exp_observaciones"
+              readonly
+              class="campo-lectura"
+            ></textarea>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script
+    type="module"
+    src="admin.js"
+  ></script>
+
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Docente - INCO</title>
+  <link rel="stylesheet" href="docente.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <img src="../img/escudo-inc.png" alt="Escudo INC" class="logo-admin">
+        <h2>Sistema de Matrícula</h2>
+        <p>Panel del Docente · Instituto Nacional de Comercio</p>
+
+        <nav class="menu">
+          <a href="#" class="activo">Buscar estudiante</a>
+        </nav>
+      </div>
+
+      <a href="../index.html" class="btn-salir">Cerrar sesión</a>
+    </aside>
+
+    <!-- CONTENIDO -->
+    <main class="admin-main">
+
+      <section class="admin-header">
+        <h1>Panel del Docente</h1>
+        <p>Consulte la matrícula de un estudiante y registre los documentos de inscripción entregados.</p>
+      </section>
+
+      <!-- BUSCAR -->
+      <section class="card-busqueda" id="seccionMatricula">
+        <h2>Buscar estudiante</h2>
+        <p>Ingrese el NIE del estudiante</p>
+
+        <div class="busqueda-box">
+          <input type="text" id="buscarInput" placeholder="Ej. NIE: 123456789">
+          <button onclick="buscarMatricula()">Buscar</button>
+        </div>
+
+        <p id="mensajeBusqueda" class="mensaje-admin"></p>
+      </section>
+
+      <!-- RESULTADOS DE BÚSQUEDA -->
+      <section id="resultadosBusqueda" style="display: none; margin-top: 30px;">
+
+        <div id="contenidoImprimir">
+
+          <!-- ACCIONES -->
+          <div class="acciones-documento">
+            <button onclick="toggleDocumentos()" class="btn-documentos" id="btnToggleDocumentos">📄 Documentos</button>
+          </div>
+
+          <!-- DATOS DE MATRÍCULA -->
+          <div class="card-resultado">
+            <h3>📋 Datos de la Matrícula</h3>
+
+            <div class="grid-2">
+              <div class="campo">
+                <label>Número de Ficha</label>
+                <input type="text" id="r_numeroFicha" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Fecha de Matrícula</label>
+                <input type="text" id="r_fechaMatricula" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>NIE</label>
+                <input type="text" id="r_nie" readonly class="campo-lectura">
+              </div>
+            </div>
+
+            <h4>👤 Datos del Estudiante</h4>
+            <div class="grid-2">
+              <div class="campo">
+                <label>Primer Apellido</label>
+                <input type="text" id="r_primerApellido" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Segundo Apellido</label>
+                <input type="text" id="r_segundoApellido" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Primer Nombre</label>
+                <input type="text" id="r_primerNombre" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Segundo Nombre</label>
+                <input type="text" id="r_segundoNombre" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Fecha de Nacimiento</label>
+                <input type="text" id="r_fechaNacimiento" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Edad</label>
+                <input type="text" id="r_edad" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Sexo</label>
+                <input type="text" id="r_sexo" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Teléfono</label>
+                <input type="text" id="r_telefonoEstudiante" readonly class="campo-lectura">
+              </div>
+              <div class="campo campo-full">
+                <label>Correo Estudiantil</label>
+                <input type="text" id="r_correoEstudiantil" readonly class="campo-lectura">
+              </div>
+            </div>
+
+            <h4>📚 Información Académica</h4>
+            <div class="grid-2">
+              <div class="campo">
+                <label>Grado</label>
+                <input type="text" id="r_grado" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Tipo de Ingreso</label>
+                <input type="text" id="r_tipoIngreso" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Especialidad</label>
+                <input type="text" id="r_especialidad" readonly class="campo-lectura">
+              </div>
+              <div class="campo campo-full">
+                <label>Centro Educativo Anterior</label>
+                <input type="text" id="r_colegioAnterior" readonly class="campo-lectura">
+              </div>
+            </div>
+
+            <h4>👨‍👩‍👦 Responsable</h4>
+            <div class="grid-2">
+              <div class="campo">
+                <label>Nombre del Responsable</label>
+                <input type="text" id="r_responsable" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Parentesco</label>
+                <input type="text" id="r_parentesco" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>DUI</label>
+                <input type="text" id="r_duiResponsable" readonly class="campo-lectura">
+              </div>
+              <div class="campo">
+                <label>Teléfono</label>
+                <input type="text" id="r_telefonoResponsable" readonly class="campo-lectura">
+              </div>
+              <div class="campo campo-full">
+                <label>Correo</label>
+                <input type="text" id="r_correoResponsable" readonly class="campo-lectura">
+              </div>
+            </div>
+          </div>
+
+          <!-- DOCUMENTOS -->
+          <div class="card-resultado card-documentos" id="seccionDocumentos" style="display:none;">
+            <h3>📄 Documentos de Inscripción</h3>
+
+            <div class="campo campo-full" style="margin-bottom: 18px;">
+              <label>Tipo de indicaciones (detectado automáticamente, puede corregirlo)</label>
+              <select id="tipoIndicacionesSelect" onchange="cambiarTipoIndicaciones()"></select>
+            </div>
+
+            <div id="listaPrincipal" class="lista-checklist"></div>
+
+            <h4>📸 Indicaciones de presentación (aplica a todos)</h4>
+            <div id="listaGeneral" class="lista-checklist"></div>
+
+            <div class="campo campo-full" style="margin-top: 18px;">
+              <label>Observaciones adicionales</label>
+              <textarea id="observacionesDocumentos" rows="4" placeholder="Escriba aquí cualquier observación extra sobre los documentos entregados..."></textarea>
+            </div>
+
+            <button onclick="guardarDocumentos()" class="btn-guardar-documentos">💾 Guardar registro de documentos</button>
+            <p id="mensajeDocumentos" class="mensaje-admin"></p>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module" src="docente.js"></script>
+</body>
+</html>

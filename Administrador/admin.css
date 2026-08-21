@@ -1,0 +1,1517 @@
+/* =========================================================
+   admin.css — Sistema de Matrícula INCO
+   Diseño verde - amarillo - rojo con efecto glossy
+   ========================================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+:root {
+  --verde-oscuro: #0f5c3b;
+  --verde-medio: #2fae5b;
+  --verde-brillo: #4fd47a;
+  --amarillo-suave: #f6efc9;
+  --amarillo-vivo: #f2c433;
+  --rojo-acento: #e2574c;
+  --rojo-suave: #f7d9d6;
+  --crema: #fffdf6;
+  --borde-suave: #d7dcbf;
+  --texto: #17321f;
+  --blanco: #ffffff;
+}
+
+body {
+  background: #f6f8f4;
+  color: var(--texto);
+}
+
+/* =========================================================
+   LAYOUT GENERAL
+   ========================================================= */
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.sidebar {
+  position: relative;
+  overflow: hidden;
+  width: 280px;
+
+  background: linear-gradient(
+    160deg,
+    #0f7a45 0%,
+    #3ea55b 26%,
+    #8dad44 52%,
+    #d9b23a 74%,
+    #e2574c 100%
+  );
+
+  color: white;
+  padding: 28px 18px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+}
+
+/* Brillo diagonal */
+.sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.28) 48%,
+    rgba(255, 255, 255, 0.06) 56%,
+    transparent 68%
+  );
+
+  pointer-events: none;
+}
+
+.sidebar-top {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo-admin {
+  width: 120px;
+  max-width: 100%;
+  margin-bottom: 18px;
+
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2));
+}
+
+.sidebar h2 {
+  font-size: 1.8rem;
+  text-align: center;
+  line-height: 1.2;
+  margin-bottom: 6px;
+
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar p {
+  font-size: 1rem;
+  text-align: center;
+  opacity: 0.95;
+  margin-bottom: 30px;
+}
+
+/* =========================================================
+   MENÚ
+   ========================================================= */
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+
+  position: relative;
+  z-index: 1;
+}
+
+.menu a {
+  text-decoration: none;
+  color: #13351f;
+
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+
+  padding: 14px 16px;
+  border-radius: 14px;
+
+  font-weight: bold;
+
+  transition: 0.3s;
+  backdrop-filter: blur(3px);
+}
+
+.menu a:hover,
+.menu a.activo {
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--verde-oscuro);
+
+  transform: translateX(4px);
+
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* =========================================================
+   BOTÓN SALIR
+   ========================================================= */
+
+.btn-salir {
+  position: relative;
+  z-index: 1;
+
+  margin-top: 30px;
+
+  text-decoration: none;
+
+  background: rgba(255, 255, 255, 0.22);
+  color: #13351f;
+
+  padding: 14px 16px;
+  border-radius: 14px;
+
+  font-weight: bold;
+  text-align: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.3);
+
+  transition: 0.3s;
+}
+
+.btn-salir:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #8d1f1f;
+}
+
+/* =========================================================
+   CONTENIDO
+   ========================================================= */
+
+.admin-main {
+  flex: 1;
+  padding: 24px;
+}
+
+/* =========================================================
+   CABECERA
+   ========================================================= */
+
+.admin-header {
+  position: relative;
+
+  background: var(--blanco);
+  border-radius: 20px;
+
+  padding: 22px 26px;
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+  margin-bottom: 22px;
+
+  border: 1px solid #edf0e7;
+
+  overflow: hidden;
+}
+
+.admin-header::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  height: 5px;
+
+  background: linear-gradient(
+    90deg,
+    var(--verde-medio),
+    var(--amarillo-vivo),
+    var(--rojo-acento)
+  );
+}
+
+.admin-header h1 {
+  font-size: 2rem;
+  color: var(--verde-oscuro);
+  margin-bottom: 6px;
+}
+
+.admin-header p {
+  font-size: 1rem;
+  color: #56725e;
+}
+
+/* =========================================================
+   TARJETA DE BÚSQUEDA / REPORTES
+   ========================================================= */
+
+.card-busqueda {
+  position: relative;
+
+  background: linear-gradient(
+    135deg,
+    #eef8ef 0%,
+    #f7f0c9 65%,
+    #fbe4d8 100%
+  );
+
+  border: 1px solid #e5dbab;
+  border-radius: 22px;
+
+  padding: 28px;
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+
+  margin-bottom: 24px;
+
+  overflow: hidden;
+}
+
+.card-busqueda::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    120deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 60%
+  );
+
+  pointer-events: none;
+}
+
+.card-busqueda h2 {
+  position: relative;
+
+  font-size: 1.7rem;
+  color: var(--verde-oscuro);
+
+  margin-bottom: 10px;
+}
+
+.card-busqueda p {
+  position: relative;
+
+  margin-bottom: 18px;
+
+  color: #3b5b45;
+  font-size: 1rem;
+}
+
+/* =========================================================
+   BUSCADOR PRINCIPAL
+   ========================================================= */
+
+.busqueda-box {
+  position: relative;
+
+  display: grid;
+  grid-template-columns: 1fr 180px;
+
+  gap: 14px;
+}
+
+.busqueda-box input {
+  width: 100%;
+
+  border: 2px solid #d5ddc8;
+  border-radius: 16px;
+
+  padding: 16px 18px;
+
+  font-size: 1rem;
+
+  background: linear-gradient(
+    135deg,
+    #fffef9 0%,
+    #f4f7ef 100%
+  );
+
+  outline: none;
+}
+
+.busqueda-box input:focus {
+  border-color: var(--verde-medio);
+
+  box-shadow:
+    0 0 0 4px rgba(47, 174, 91, 0.15);
+}
+
+.busqueda-box button {
+  border: none;
+  border-radius: 16px;
+
+  background: linear-gradient(
+    135deg,
+    var(--verde-brillo),
+    var(--verde-medio)
+  );
+
+  color: white;
+
+  font-size: 1rem;
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+.busqueda-box button:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 18px rgba(47, 174, 91, 0.3);
+}
+
+/* =========================================================
+   ACCIONES SOBRE EL DOCUMENTO
+   ========================================================= */
+
+.acciones-documento {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  margin-bottom: 18px;
+}
+
+.acciones-documento button {
+  border: none;
+
+  border-radius: 14px;
+
+  padding: 12px 18px;
+
+  font-size: 0.95rem;
+  font-weight: bold;
+
+  cursor: pointer;
+
+  color: white;
+
+  transition: 0.25s;
+}
+
+.btn-imprimir {
+  background: linear-gradient(
+    135deg,
+    #3d8f53,
+    var(--verde-oscuro)
+  );
+}
+
+.btn-descargar {
+  background: linear-gradient(
+    135deg,
+    var(--amarillo-vivo),
+    #d69a1f
+  );
+
+  color: #3a2c05 !important;
+}
+
+.btn-documentos {
+  background: linear-gradient(
+    135deg,
+    var(--rojo-acento),
+    #b8362c
+  );
+}
+
+.acciones-documento button:hover {
+  transform: translateY(-2px);
+
+  filter: brightness(1.06);
+
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+/* =========================================================
+   FILTROS DE REPORTES
+   ========================================================= */
+
+/*
+   AQUÍ ESTÁ LA CORRECCIÓN PRINCIPAL.
+
+   Los filtros ahora se muestran uno debajo del otro,
+   ocupando todo el ancho, como en la segunda imagen.
+*/
+
+.filtros-reporte {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+
+  gap: 12px;
+
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.filtros-reporte .campo {
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+
+  gap: 5px;
+}
+
+.filtros-reporte .campo label {
+  display: block;
+
+  font-weight: 500;
+
+  font-size: 0.75rem;
+
+  color: #174f45;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.3px;
+
+  margin-left: 2px;
+}
+
+/* =========================================================
+   INPUTS Y SELECTS DE REPORTES
+   ========================================================= */
+
+.filtros-reporte input,
+.filtros-reporte select {
+  width: 100%;
+
+  height: 38px;
+
+  border: 1px solid #cfd9c4;
+
+  border-radius: 12px;
+
+  padding: 7px 14px;
+
+  font-size: 0.85rem;
+
+  background: #f9faf5;
+
+  color: #355c55;
+
+  outline: none;
+
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Placeholder */
+.filtros-reporte input::placeholder {
+  color: #54718a;
+
+  opacity: 1;
+}
+
+/* =========================================================
+   SELECT
+   ========================================================= */
+
+.filtros-reporte select {
+  background-color: #f9faf5;
+
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f5c3b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+
+  background-repeat: no-repeat;
+
+  background-position: right 14px center;
+
+  background-size: 16px;
+
+  padding-right: 40px;
+
+  cursor: pointer;
+}
+
+/* =========================================================
+   HOVER
+   ========================================================= */
+
+.filtros-reporte input:hover,
+.filtros-reporte select:hover {
+  border-color: #b8c8ad;
+
+  background: #ffffff;
+}
+
+/* =========================================================
+   FOCUS
+   ========================================================= */
+
+.filtros-reporte input:focus,
+.filtros-reporte select:focus {
+  border-color: #9bbd9f;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 3px rgba(155, 189, 159, 0.15);
+}
+
+/* =========================================================
+   BOTONES DE REPORTES
+   ========================================================= */
+
+.btn-buscar-reporte,
+.btn-limpiar-reporte {
+  border: none;
+
+  border-radius: 13px;
+
+  padding: 12px 22px;
+
+  font-size: 0.95rem;
+
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: 0.25s;
+
+  margin-right: 10px;
+}
+
+.btn-buscar-reporte {
+  background: linear-gradient(
+    135deg,
+    var(--verde-brillo),
+    var(--verde-medio)
+  );
+
+  color: white;
+}
+
+.btn-buscar-reporte:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 18px rgba(47, 174, 91, 0.3);
+}
+
+.btn-limpiar-reporte {
+  background: linear-gradient(
+    135deg,
+    #f3f5ef,
+    #e6eaef
+  );
+
+  color: #1e2a3a;
+
+  border: 1.5px solid #d7ddcb;
+}
+
+.btn-limpiar-reporte:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================================
+   PANEL DE RESULTADO
+   ========================================================= */
+
+.card-resultado {
+  background: white;
+
+  padding: 2rem;
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.08);
+
+  border: 1px solid #edf0e7;
+
+  margin-bottom: 20px;
+}
+
+.card-resultado h3 {
+  color: #1a3a2b;
+
+  font-size: 1.4rem;
+
+  margin-bottom: 1.5rem;
+
+  padding-bottom: 0.6rem;
+
+  border-bottom: 3px solid transparent;
+
+  border-image:
+    linear-gradient(
+      90deg,
+      var(--verde-medio),
+      var(--amarillo-vivo),
+      var(--rojo-acento)
+    ) 1;
+}
+
+.card-resultado h4 {
+  color: #1a3a2b;
+
+  font-size: 1.1rem;
+
+  margin: 1.5rem 0 1rem 0;
+}
+
+/* =========================================================
+   GRID
+   ========================================================= */
+
+.grid-2 {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 1rem;
+}
+
+.campo {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 0.3rem;
+}
+
+.campo-full {
+  grid-column: 1 / -1;
+}
+
+.campo label {
+  font-weight: 600;
+
+  font-size: 0.8rem;
+
+  color: #4a5a6a;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.5px;
+}
+
+.campo-lectura {
+  padding: 0.6rem 0.9rem;
+
+  border: 1.5px solid #e0e0e0;
+
+  border-radius: 8px;
+
+  font-size: 0.95rem;
+
+  background: #f8f9fa;
+
+  color: #1e2a3a;
+
+  cursor: default;
+}
+
+.campo textarea {
+  width: 100%;
+
+  border: 2px solid #d7ddcb;
+
+  border-radius: 14px;
+
+  padding: 13px 14px;
+
+  font-size: 1rem;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fffefb 0%,
+      #f7f8f2 60%,
+      #fdf3ec 100%
+    );
+
+  color: #243424;
+
+  outline: none;
+
+  resize: vertical;
+
+  min-height: 90px;
+
+  transition: 0.3s;
+}
+
+.campo textarea:focus {
+  border-color: var(--verde-medio);
+
+  box-shadow:
+    0 0 0 4px rgba(47, 174, 91, 0.15);
+}
+
+#tipoIndicacionesSelect {
+  width: 100%;
+
+  border: 2px solid #d5ddc8;
+
+  border-radius: 14px;
+
+  padding: 12px 14px;
+
+  font-size: 0.98rem;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fffef9 0%,
+      #f4f7ef 100%
+    );
+
+  outline: none;
+}
+
+/* =========================================================
+   MENSAJES
+   ========================================================= */
+
+.mensaje-admin {
+  margin-top: 16px;
+
+  font-weight: bold;
+
+  text-align: center;
+
+  color: var(--verde-oscuro);
+}
+
+/* =========================================================
+   CHECKLIST
+   ========================================================= */
+
+.card-documentos {
+  border-top: 6px solid transparent;
+
+  border-image:
+    linear-gradient(
+      90deg,
+      var(--verde-medio),
+      var(--amarillo-vivo),
+      var(--rojo-acento)
+    ) 1;
+}
+
+.lista-checklist {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  margin-bottom: 10px;
+}
+
+.checklist-item {
+  display: grid;
+
+  grid-template-columns: auto 1fr;
+
+  align-items: start;
+
+  gap: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fbfcf8 0%,
+      #f6f8f0 60%,
+      #fdf5ea 100%
+    );
+
+  border: 1.5px solid #e3e8d6;
+
+  border-radius: 14px;
+
+  padding: 14px 16px;
+
+  transition: 0.25s;
+}
+
+.checklist-item.marcado {
+  border-color: var(--verde-medio);
+
+  background:
+    linear-gradient(
+      135deg,
+      #eef9f0 0%,
+      #eaf7ee 100%
+    );
+
+  box-shadow:
+    0 4px 14px rgba(47, 174, 91, 0.12);
+}
+
+.checklist-item input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+
+  margin-top: 4px;
+
+  accent-color: var(--verde-medio);
+
+  cursor: pointer;
+}
+
+.checklist-item .texto-indicacion {
+  font-size: 0.98rem;
+
+  color: #22331f;
+
+  font-weight: 600;
+
+  margin-bottom: 8px;
+
+  line-height: 1.35;
+}
+
+.checklist-item input[type="text"] {
+  width: 100%;
+
+  border: 1.5px solid #d7ddcb;
+
+  border-radius: 10px;
+
+  padding: 9px 12px;
+
+  font-size: 0.9rem;
+
+  background: #ffffff;
+
+  outline: none;
+}
+
+.checklist-item input[type="text"]:focus {
+  border-color: var(--verde-medio);
+
+  box-shadow:
+    0 0 0 3px rgba(47, 174, 91, 0.12);
+}
+
+.btn-guardar-documentos {
+  border: none;
+
+  border-radius: 16px;
+
+  padding: 14px 26px;
+
+  font-size: 1rem;
+
+  font-weight: bold;
+
+  color: white;
+
+  cursor: pointer;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--verde-brillo),
+      var(--verde-oscuro)
+    );
+
+  transition: 0.3s;
+}
+
+.btn-guardar-documentos:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 20px rgba(15, 92, 59, 0.28);
+}
+
+/* =========================================================
+   TABLA DE REPORTES
+   ========================================================= */
+
+.tabla-reportes {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  background: white;
+
+  border-radius: 16px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.07);
+}
+
+.tabla-reportes th {
+  background:
+    linear-gradient(
+      90deg,
+      var(--verde-oscuro),
+      var(--verde-medio)
+    );
+
+  color: white;
+
+  text-align: left;
+
+  padding: 14px 16px;
+
+  font-size: 0.82rem;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.6px;
+}
+
+.tabla-reportes td {
+  padding: 13px 16px;
+
+  border-bottom: 1px solid #edf0e7;
+
+  font-size: 0.92rem;
+
+  color: #243424;
+}
+
+.tabla-reportes tbody tr:hover {
+  background:
+    linear-gradient(
+      135deg,
+      #f3faf4,
+      #fdf6e6
+    );
+}
+
+.btn-ver-fila {
+  border: none;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--rojo-acento),
+      #b8362c
+    );
+
+  color: white;
+
+  padding: 7px 16px;
+
+  border-radius: 12px;
+
+  font-size: 0.85rem;
+
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: 0.25s;
+}
+
+.btn-ver-fila:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 14px rgba(226, 87, 76, 0.35);
+}
+
+/* =========================================================
+   CAMPOS EDITABLES
+   ========================================================= */
+
+.campo-editable {
+  background-color: #fffde7 !important;
+
+  border: 1.5px solid #f9a825 !important;
+
+  color: #1a1a1a !important;
+
+  cursor: text;
+}
+
+/* =========================================================
+   FOTO DEL ESTUDIANTE
+   ========================================================= */
+
+.foto-estudiante-contenedor {
+  margin-bottom: 16px;
+}
+
+.foto-estudiante-preview {
+  width: 110px;
+
+  height: 140px;
+
+  object-fit: cover;
+
+  border: 2px solid #1a3a2b;
+
+  border-radius: 6px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+
+    padding: 22px 16px;
+  }
+
+  .busqueda-box {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-main {
+    padding: 16px;
+  }
+
+  .admin-header h1 {
+    font-size: 1.6rem;
+  }
+
+  .checklist-item {
+    grid-template-columns: 1fr;
+  }
+
+  /* Los reportes continúan verticales */
+  .filtros-reporte {
+    grid-template-columns: 1fr;
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filtros-reporte input,
+  .filtros-reporte select {
+    width: 100%;
+  }
+
+  .btn-buscar-reporte,
+  .btn-limpiar-reporte {
+    width: 100%;
+
+    margin-right: 0;
+
+    margin-bottom: 8px;
+  }
+}
+
+/* =========================================================
+   IMPRESIÓN
+   ========================================================= */
+
+@media print {
+
+  @page {
+    size: 216mm 330mm;
+
+    margin: 8mm;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #contenidoImprimir,
+  #contenidoImprimir * {
+    visibility: visible;
+  }
+
+  #contenidoImprimir {
+    position: absolute;
+
+    left: 0;
+
+    top: 0;
+
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   FICHA OFICIAL DE MATRÍCULA (vista imprimible / PDF)
+   Replica el formato del formulario en papel del MINEDUCYT.
+   Estas reglas NO afectan ni alteran el diseño verde/amarillo
+   /rojo del resto del panel: aplican únicamente dentro de
+   #contenidoImprimir, con colores neutros (blanco y negro)
+   iguales a los del documento oficial original.
+   ========================================================= */
+
+#contenidoImprimir {
+  background: #ffffff;
+}
+
+/*
+   Tamaño de página oficio = 216mm x 330mm.
+   A 96dpi eso equivale aproximadamente a 816px x 1247px.
+   .ficha-oficial se dimensiona para caber, con margen,
+   completa en una sola hoja tanto en pantalla como al
+   imprimir (window.print) o exportar a PDF (html2pdf).
+*/
+
+.ficha-oficial {
+  width: 780px;
+  max-width: 100%;
+  margin: 0 auto;
+
+  background: #ffffff;
+  color: #000000;
+
+  padding: 14px 22px 18px 22px;
+
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
+.ficha-oficial p {
+  font-size: 10px;
+  line-height: 1.55;
+  margin: 2px 0;
+}
+
+.ficha-oficial h1,
+.ficha-oficial h3 {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ---------------------------------------------------------
+   ENCABEZADO
+   --------------------------------------------------------- */
+
+.fo-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 4px;
+}
+
+.fo-logo {
+  width: 62px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.fo-titulo {
+  flex: 1;
+  text-align: center;
+}
+
+.fo-titulo-min {
+  font-size: 9.5px;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.fo-titulo h1 {
+  font-size: 14px;
+  margin: 2px 0;
+}
+
+.fo-foto {
+  flex-shrink: 0;
+
+  width: 78px;
+  height: 96px;
+
+  border: 1px solid #000000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  font-size: 8.5px;
+  line-height: 1.3;
+
+  overflow: hidden;
+  position: relative;
+}
+
+/* ---------------------------------------------------------
+   TEXTO LEGAL Y AÑO
+   --------------------------------------------------------- */
+
+.fo-texto-legal {
+  font-size: 8.3px !important;
+  text-align: justify;
+  margin: 5px 0 !important;
+  line-height: 1.25 !important;
+  color: #222222;
+}
+
+.fo-anio {
+  margin: 4px 0 !important;
+}
+
+/* ---------------------------------------------------------
+   LÍNEAS DE LLENADO (equivalentes a los guiones bajos)
+   --------------------------------------------------------- */
+
+.fo-linea {
+  display: inline-block;
+  min-width: 120px;
+  border-bottom: 1px solid #000000;
+  padding: 0 4px 0 4px;
+  text-align: center;
+}
+
+.fo-linea-corta {
+  display: inline-block;
+  min-width: 48px;
+  border-bottom: 1px solid #000000;
+  padding: 0 4px 0 4px;
+  text-align: center;
+}
+
+.fo-linea-mini {
+  display: inline-block;
+  min-width: 28px;
+  border-bottom: 1px solid #000000;
+  padding: 0 3px 0 3px;
+  text-align: center;
+}
+
+.fo-linea-larga {
+  display: inline-block;
+  min-width: 300px;
+  border-bottom: 1px solid #000000;
+  padding: 0 4px 0 4px;
+  text-align: center;
+}
+
+.fo-check {
+  display: inline-block;
+  min-width: 14px;
+  border-bottom: 1px solid #000000;
+  padding: 0 3px 0 3px;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* ---------------------------------------------------------
+   FILA SUPERIOR: PARTIDA / NIE-DUI / SELLO / N°
+   --------------------------------------------------------- */
+
+.fo-fila-top {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 10px;
+
+  margin: 6px 0;
+}
+
+.fo-tabla-partida {
+  border-collapse: collapse;
+  font-size: 8.8px;
+  flex-shrink: 0;
+}
+
+.fo-tabla-partida th,
+.fo-tabla-partida td {
+  border: 1px solid #000000;
+  padding: 2px 7px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.fo-nie-dui {
+  flex: 1;
+  min-width: 130px;
+  font-size: 10px;
+  align-self: center;
+}
+
+.fo-nie-dui p {
+  margin: 3px 0 !important;
+}
+
+.fo-sello {
+  border: 1px solid #000000;
+  padding: 0 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+}
+
+.fo-numero {
+  border: 1px solid #000000;
+  padding: 4px 10px;
+  flex-shrink: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+
+  font-size: 9.5px;
+}
+
+.fo-numero-valor {
+  font-weight: bold;
+}
+
+.fo-fecha {
+  margin: 4px 0 !important;
+}
+
+/* ---------------------------------------------------------
+   SUBTÍTULOS DE SECCIÓN
+   --------------------------------------------------------- */
+
+.fo-subtitulo {
+  font-size: 10.5px;
+  font-weight: bold;
+  text-decoration: underline;
+  margin: 7px 0 4px 0;
+}
+
+/* ---------------------------------------------------------
+   TABLA DE NOMBRE DEL ESTUDIANTE
+   --------------------------------------------------------- */
+
+.fo-tabla-nombre {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 3px;
+}
+
+.fo-tabla-nombre td {
+  border: 1px solid #000000;
+  padding: 4px 6px 2px 6px;
+  text-align: center;
+  font-size: 10px;
+}
+
+.fo-tabla-labels td {
+  border-top: none;
+  padding-top: 0;
+  padding-bottom: 4px;
+  font-size: 8px;
+  font-style: italic;
+  color: #333333;
+}
+
+/* ---------------------------------------------------------
+   TABLA MADRE / PADRE
+   --------------------------------------------------------- */
+
+.fo-tabla-madre-padre {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 9.5px;
+}
+
+.fo-tabla-madre-padre th {
+  border: 1px solid #000000;
+  padding: 3px;
+  background: #eeeeee;
+  font-size: 10px;
+  text-align: center;
+}
+
+.fo-tabla-madre-padre td {
+  border: 1px solid #000000;
+  padding: 4px 7px;
+  width: 50%;
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+.fo-tabla-madre-padre td .fo-linea {
+  min-width: 130px;
+}
+
+/* ---------------------------------------------------------
+   COMPROMISOS
+   --------------------------------------------------------- */
+
+.fo-compromisos {
+  font-size: 8px;
+  margin: 4px 0 4px 16px;
+  line-height: 1.3;
+}
+
+/* ---------------------------------------------------------
+   FIRMAS
+   --------------------------------------------------------- */
+
+.fo-firmas {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+
+  margin-top: 22px;
+}
+
+.fo-firma {
+  text-align: center;
+  font-size: 9px;
+}
+
+.fo-linea-firma {
+  display: block;
+  width: 150px;
+  border-top: 1px solid #000000;
+  margin: 0 auto 3px auto;
+}
+
+/* ---------------------------------------------------------
+   ASEGURAR UNA SOLA PÁGINA AL IMPRIMIR / GENERAR PDF
+   --------------------------------------------------------- */
+
+@media print {
+  .ficha-oficial {
+    width: 100%;
+    padding: 0 4mm;
+  }
+
+  .ficha-oficial,
+  .fo-tabla-partida,
+  .fo-tabla-nombre,
+  .fo-tabla-madre-padre,
+  .fo-firmas {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
