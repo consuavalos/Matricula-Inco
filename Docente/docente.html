@@ -54,9 +54,25 @@
         <div id="contenidoImprimir">
 
           <!-- ACCIONES -->
-          <div class="acciones-documento">
-            <button onclick="toggleDocumentos()" class="btn-documentos" id="btnToggleDocumentos">📄 Documentos</button>
-          </div>
+<div class="acciones-documento">
+
+    <button onclick="modificarcampos()" class="btn-Modificar" id="btnModificar">
+        ✏️ Modificar
+    </button>
+
+    <button onclick="guardarCambios()" class="btn-guardar" id="btnGuardarCambios" style="display:none;">
+        💾 Guardar cambios
+    </button>
+
+    <button onclick="cancelarModificacion()" class="btn-cancelar" id="btnCancelarCambios" style="display:none;">
+        ❌ Cancelar
+    </button>
+
+    <button onclick="toggleDocumentos()" class="btn-documentos" id="btnToggleDocumentos">
+        📄 Documentos
+    </button>
+
+</div>
 
           <!-- DATOS DE MATRÍCULA -->
           <div class="card-resultado">

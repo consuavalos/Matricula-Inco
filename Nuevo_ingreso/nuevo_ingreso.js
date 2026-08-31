@@ -3,6 +3,8 @@ import {
   collection,
   addDoc,
   getDocs,
+  query,
+  where,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* =========================================================
@@ -162,6 +164,12 @@ function validarCampo(el) {
     mensaje = "El correo debe contener el símbolo arroba (@).";
   }
 
+  // Validación extra: NIE ya registrado (se marca desde verificarNieDuplicado)
+  if (valido && el.id === "nie" && el.dataset.duplicado === "true") {
+    valido = false;
+    mensaje = "Este NIE ya se encuentra registrado en el sistema.";
+  }
+
   const contenedor = obtenerContenedor(el);
   const span = obtenerSpanError(el);
 
@@ -209,6 +217,61 @@ todosLosCampos.forEach((el) => {
   el.addEventListener("change", () => validarCampo(el));
   el.addEventListener("blur", () => validarCampo(el));
 });
+
+/* =========================================================
+   NIE DUPLICADO — verificar contra Firestore
+========================================================= */
+
+// Consulta Firestore y devuelve true si el NIE ya existe en "matriculas"
+async function nieYaExisteEnBD(valorNie) {
+  if (!valorNie) return false;
+  try {
+    const q = query(collection(db, "matriculas"), where("nie", "==", valorNie));
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
+  } catch (error) {
+    console.error("Error verificando NIE duplicado:", error);
+    // Si falla la consulta, no bloqueamos al usuario por un problema de red/permisos;
+    // la validación final se repite de todas formas al enviar el formulario.
+    return false;
+  }
+}
+
+// Verificación en vivo cuando el usuario termina de escribir el NIE (blur)
+async function verificarNieDuplicado() {
+  if (!nie) return;
+  const valor = nie.value.trim();
+
+  // Limpiar estado previo mientras se revisa
+  nie.dataset.duplicado = "false";
+
+  if (!valor) return;
+
+  const span = obtenerSpanError(nie);
+  const contenedor = obtenerContenedor(nie);
+  if (span) span.textContent = "Verificando NIE…";
+  if (contenedor) contenedor.classList.remove("campo-invalido");
+
+  const existe = await nieYaExisteEnBD(valor);
+  nie.dataset.duplicado = existe ? "true" : "false";
+
+  // Vuelve a correr la validación normal del campo, que ahora
+  // toma en cuenta dataset.duplicado
+  validarCampo(nie);
+
+  if (!existe && span && span.textContent === "Verificando NIE…") {
+    span.textContent = "";
+  }
+}
+
+if (nie) {
+  nie.addEventListener("blur", verificarNieDuplicado);
+  // Si el usuario vuelve a editar el NIE después de haber sido marcado
+  // como duplicado, se limpia esa marca hasta la próxima verificación.
+  nie.addEventListener("input", () => {
+    nie.dataset.duplicado = "false";
+  });
+}
 
 /* =========================================================
    FUNCIONES FALTANTES (AGREGADAS)
@@ -539,9 +602,21 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // ===== EVENTOS DE NAVEGACIÓN =====
     if (btnSiguiente) {
-      btnSiguiente.addEventListener("click", () => {
+      btnSiguiente.addEventListener("click", async () => {
         // No avanza al siguiente paso si el paso actual tiene campos inválidos
         if (!validarPaso(pasoActual)) return;
+
+        // Si estamos saliendo del paso que contiene el NIE, confirmar que
+        // no esté duplicado antes de continuar.
+        if (pasoActual === 1 && nie) {
+          await verificarNieDuplicado();
+          if (nie.dataset.duplicado === "true") {
+            validarCampo(nie);
+            nie.scrollIntoView({ behavior: "smooth", block: "center" });
+            nie.focus({ preventScroll: true });
+            return;
+          }
+        }
 
         if (pasoActual < TOTAL_PASOS) {
           mostrarPaso(pasoActual + 1);
@@ -606,6 +681,30 @@ if (form) {
       return;
     }
 
+    // Verificación final e infalible: revisar contra Firestore que el NIE
+    // no exista ya, justo antes de guardar (evita condiciones de carrera
+    // o que el usuario haya editado el NIE sin volver a salir del campo).
+    if (mensajeExito) {
+      mensajeExito.textContent = "⏳ Verificando NIE…";
+      mensajeExito.style.color = "blue";
+    }
+
+    const valorNie = nie ? nie.value.trim() : "";
+    const nieDuplicado = await nieYaExisteEnBD(valorNie);
+
+    if (nieDuplicado) {
+      nie.dataset.duplicado = "true";
+      validarCampo(nie);
+      mostrarPaso(1);
+      nie.scrollIntoView({ behavior: "smooth", block: "center" });
+      nie.focus({ preventScroll: true });
+      if (mensajeExito) {
+        mensajeExito.textContent = "❌ Este NIE ya está registrado. No se puede matricular dos veces con el mismo NIE.";
+        mensajeExito.style.color = "red";
+      }
+      return;
+    }
+
     // Preparar datos
     const formData = new FormData(form);
     const data = {};
@@ -655,6 +754,7 @@ if (form) {
         form.reset();
         if (vistaPrevia) vistaPrevia.innerHTML = "";
         if (edad) edad.value = "";
+        if (nie) nie.dataset.duplicado = "false";
         
         // Limpiar campos de tallas según sexo
         const sexoSelect = document.getElementById("sexo");
@@ -781,6 +881,26 @@ function configurarCorreoEstudiantil() {
     input.value = soloNumeros ? soloNumeros + DOMINIO : "";
     validarCampo(input);
   });
+}
+
+/* =========================================================
+   AUTOCOMPLETAR CORREO ESTUDIANTIL DESDE EL NIE
+   Cada vez que el usuario escribe en el campo NIE, el correo
+   estudiantil se llena automáticamente con esos mismos números
+   más el dominio @clases.edu.sv
+========================================================= */
+const DOMINIO_CORREO_ESTUDIANTIL = "@clases.edu.sv";
+
+function sincronizarCorreoEstudiantilConNie() {
+  const correoEstudiantil = document.getElementById("correoEstudiantil");
+  if (!correoEstudiantil || !nie) return;
+
+  const soloNumeros = nie.value.replace(/\D/g, "");
+  correoEstudiantil.value = soloNumeros ? soloNumeros + DOMINIO_CORREO_ESTUDIANTIL : "";
+  correoEstudiantil.setCustomValidity("");
+
+  // Refresca el mensaje de error/validación del campo si ya se había tocado
+  validarCampo(correoEstudiantil);
 }
 
 /* =========================================================
@@ -1003,10 +1123,13 @@ camposDui.forEach(id => {
 
 /* ============================================================
    VALIDACIÓN NIE — solo números
+   Además de dejar solo números, sincroniza automáticamente
+   el correo electrónico estudiantil con el valor del NIE.
    ============================================================ */
 if (nie) {
   nie.addEventListener("input", function () {
     this.value = this.value.replace(/\D/g, "");
+    sincronizarCorreoEstudiantilConNie();
   });
 }
 

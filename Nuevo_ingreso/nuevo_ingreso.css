@@ -39,94 +39,31 @@ body {
   padding: 2.5rem 1rem 4rem;
 }
 
-/* ---------- HEADER ---------- */
+/* =========================================================
+   ENCABEZADO PROFESIONAL - SISTEMA DE MATRÍCULA
+   ========================================================= */
+
 .encabezado {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  background: linear-gradient(120deg,
-    var(--verde-oscuro) 0%,
-    var(--verde-medio) 32%,
-    var(--amarillo-vivo) 68%,
-    var(--rojo-acento) 100%);
-  padding: 1.1rem 2rem;
-  border-radius: 20px 20px 0 0;
-  color: #fff;
-  width: 100%;
-  max-width: 1000px;
-  box-shadow: 0 10px 26px rgba(15, 92, 59, 0.22);
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0;
+    border-radius: 18px 18px 0 0;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    line-height: 0;
 }
 
-.encabezado::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(115deg,
-    transparent 35%,
-    rgba(255,255,255,0.28) 48%,
-    rgba(255,255,255,0.06) 56%,
-    transparent 68%);
-  pointer-events: none;
-}
-
-/* "Sello" institucional detrás del logo */
-.encabezado::after {
-  content: "";
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  border: 2px dashed rgba(255,255,255,0.35);
-  pointer-events: none;
-}
-
-.encabezado > * {
-  position: relative;
-  z-index: 1;
-}
-
-.logo-mini {
-  width: 52px;
-  height: 52px;
-  object-fit: contain;
-  background: rgba(255,255,255,0.9);
-  border-radius: 50%;
-  padding: 6px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.18);
-}
-
-.encabezado-central {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.titulos-header {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.titulos-header h1 {
-  font-size: 1.45rem;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
-
-.titulos-header p {
-  font-size: 0.88rem;
-  opacity: 0.9;
-  letter-spacing: 0.3px;
-}
-
-.titulos-header p::before {
-  content: "🎓 ";
+/* Imagen institucional completa */
+.encabezado .banner {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    object-fit: contain;
 }
 
 /* ---------- CONTENEDOR ---------- */

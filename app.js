@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (
                 usuario === 'admin' &&
-                clave === '12345'
+                clave === 'Admin-INCO'
             ) {
 
                 mensajeAdmin.textContent =
@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (
                 usuario === 'docente' &&
-                clave === '12345'
+                clave === 'INCOdocente'
             ) {
 
                 mensajeDocente.textContent =

@@ -5,58 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Formulario de Matrícula INCO - Nuevo ingreso</title>
   <link rel="stylesheet" href="nuevo_ingreso.css" />
-
-  <!-- ================================================================
-       Estilos de apoyo para la validación por pasos.
-       Se agregan aquí (en vez de tocar tu nuevo_ingreso.css, que no
-       tengo) para que funcionen sin importar el CSS que ya tengas.
-       Si prefieres, puedes moverlos a tu archivo .css normalmente.
-  ================================================================= -->
-  <style>
-    .form-step { display: none; }
-    .form-step.activo { display: block; }
-
-    .campo-invalido input,
-    .campo-invalido select,
-    .campo-invalido textarea {
-      border: 1.5px solid #e53935 !important;
-      background-color: #fff5f5;
-    }
-
-    .error-mensaje {
-      display: block;
-      color: #e53935;
-      font-size: 0.8rem;
-      margin-top: 4px;
-      min-height: 1em;
-    }
-
-    .aviso-sobreedad {
-      color: #b26a00;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    .mensaje-exito { font-weight: 600; }
-
-    .vista-previa img {
-      max-width: 120px;
-      border-radius: 6px;
-      margin-top: 8px;
-    }
-  </style>
 </head>
 <body>
 
 <header class="encabezado">
-    <img src="../img/Escudo-inc.png" alt="Escudo INC" class="logo-mini" />
+    <img src="../img/encabezado-matricula.png"
+         alt="Sistema de Matrícula - Instituto Nacional de Comercio"
+         class="banner">
+</header>
 
-    <div class="titulos-header">
-      <h1>Sistema de Matrícula INCO</h1>
-      <p>Formulario de inscripción del estudiante</p>
-    </div>
-
-  </header>
+<!-- Aquí continúa el resto de tu formulario -->
 
   <main class="contenedor-formulario">
     <form id="matriculaForm" class="form-card" novalidate>
@@ -92,7 +50,7 @@
           <div class="campo">
             <label for="nie">NIE</label>
             <input type="text" id="nie" name="nie" required inputmode="numeric" maxlength="9" pattern="[0-9]+"
-                   placeholder="00000000" title="El NIE solo debe contener números,
+                   placeholder="000000000" title="El NIE solo debe contener números,
                    Debe contener maximo 9 números en formato 000000000" />
           </div>
           <div class="campo">
@@ -198,8 +156,7 @@
             <input type="file" id="fotoEstudiante" name="fotoEstudiante" accept=".jpg,.jpeg,.png" />
           </label>
           <p class="foto-requisitos">Tamaño recomendado: 3.5 x 2.5 cm</p>
-          <div id="vistaPreviaFoto" name="vistaPreviaFoto" class="vista-previa">
-          </div>
+          <div id="vistaPreviaFoto" class="vista-previa"></div>
         </div>
       </section>
 

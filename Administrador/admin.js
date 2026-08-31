@@ -271,15 +271,24 @@ function descomponerFecha(fechaStr) {
    formato oficial de "Ficha de Matrícula Oficial del
    alumno/a" del Ministerio de Educación, en una sola página
    tamaño oficio, con los espacios llenados con los datos ya
-   registrados en el formulario de Nuevo Ingreso (alumno,
-   estudios, recursos, salud, encargado, madre, padre y
-   partida de nacimiento).
-   Quedan en blanco únicamente los campos que ningún
-   formulario del sistema captura todavía: DUI del propio
-   estudiante, lugar/dirección de residencia, transporte,
-   con quién vive, dosis de medicamento, zona urbana/rural,
-   "en qué año" del último grado aprobado, SELLO y las firmas
-   (para completarse a mano, igual que en el papel).
+   registrados en el formulario de Nuevo Ingreso.
+
+   REGLAS DE IMPRESIÓN (actualizado):
+   - NO se imprime la sección de Partida de Nacimiento
+     (número, folio, tomo, libro): esa información queda
+     únicamente en la vista en pantalla / edición del
+     administrador, no en el documento impreso ni en el PDF.
+   - Cualquier campo de opción única (sexo, tipo de ingreso,
+     enfermedad, vacuna, computadora MINEDUCYT, internet,
+     zona de residencia, con quién vive, transporte, hermanos
+     en el centro, bachillerato) se imprime mostrando SOLO el
+     valor real que el estudiante marcó/seleccionó. Ya no se
+     listan las opciones no marcadas ni casillas vacías: si el
+     dato no existe, la línea completa se omite del impreso.
+   - Los campos que ningún formulario del sistema captura
+     todavía (dosis del medicamento, "en qué año" del último
+     grado aprobado, SELLO y las firmas) se dejan en blanco
+     para completarse a mano, igual que en el papel.
 ========================================================= */
 function generarFichaImprimir(data, expediente) {
   const contenedor = document.getElementById("contenidoImprimir");
@@ -288,22 +297,6 @@ function generarFichaImprimir(data, expediente) {
   const fNac = descomponerFecha(data.fechaNacimiento);
   const fMat = descomponerFecha(data.fechaMatricula);
   const anioCorto = fMat.anio ? fMat.anio.slice(-1) : "";
-
-  const sexoTexto = (data.sexo || "").toLowerCase();
-  const esMasculino = sexoTexto.startsWith("m");
-  const esFemenino = sexoTexto.startsWith("f");
-
-  const tipoIngresoTexto = (data.tipoIngreso || "").toLowerCase();
-  const esNuevoIngreso = tipoIngresoTexto.includes("nuevo");
-  const esOtroIngreso = !!data.tipoIngreso && !esNuevoIngreso;
-
-  const especialidad = data.especialidad || "";
-  const esGeneral = especialidad === "Bachillerato General";
-  const esAdminContable = especialidad === "Administrativo Contable";
-  const esServiciosTuristicos = especialidad === "Servicios Turísticos";
-  const esDesarrolloSoftware = especialidad === "Desarrollo de Software";
-
-  const marcar = (condicion) => (condicion ? "X" : "");
 
   contenedor.innerHTML = `
     <div class="ficha-oficial">
@@ -332,20 +325,9 @@ function generarFichaImprimir(data, expediente) {
       <p class="fo-anio"><strong>Año de Bachillerato que estudiará:</strong> <span class="fo-linea">${data.grado || ""}</span></p>
 
       <div class="fo-fila-top">
-        <table class="fo-tabla-partida">
-          <tr><th colspan="4">Partida de Nacimiento</th></tr>
-          <tr><td>N°</td><td>Folio</td><td>Tomo</td><td>Libro</td></tr>
-          <tr>
-            <td>${data.partidaNumero || "&nbsp;"}</td>
-            <td>${data.folio || "&nbsp;"}</td>
-            <td>${data.tomo || "&nbsp;"}</td>
-            <td>${data.libro || "&nbsp;"}</td>
-          </tr>
-        </table>
-
         <div class="fo-nie-dui">
           <p><strong>NIE:</strong> <span class="fo-linea">${data.nie || ""}</span></p>
-          <p><strong>DUI:</strong> <span class="fo-linea"></span></p>
+          <p><strong>DUI:</strong> <span class="fo-linea">${data.duiEstudiante || ""}</span></p>
         </div>
 
         <div class="fo-sello">SELLO</div>
@@ -387,62 +369,51 @@ function generarFichaImprimir(data, expediente) {
 
       <p>
         Edad: <span class="fo-linea-mini">${data.edad || ""}</span>
-        &nbsp;&nbsp;Sexo: M <span class="fo-check">${marcar(esMasculino)}</span>
-        &nbsp;F <span class="fo-check">${marcar(esFemenino)}</span>
+        ${data.sexo ? `&nbsp;&nbsp;Sexo: <strong>${data.sexo}</strong>` : ""}
         &nbsp;&nbsp;N° de celular del estudiante <span class="fo-linea">${data.telefonoEstudiante || ""}</span>
         &nbsp;&nbsp;Grado que estudiará <span class="fo-linea">${data.grado || ""}</span>
       </p>
 
       <p>
         Último año aprobado <span class="fo-linea">${data.ultimoAnioAprobado || ""}</span>
-        en qué año <span class="fo-linea"></span>
-        &nbsp;&nbsp;Nuevo ingreso: SI <span class="fo-check">${marcar(esNuevoIngreso)}</span>
-        NO <span class="fo-check">${marcar(esOtroIngreso)}</span>
+        ${data.tipoIngreso ? `&nbsp;&nbsp;<strong>${data.tipoIngreso}</strong>` : ""}
         &nbsp;&nbsp;¿Dónde estudió el año anterior? <span class="fo-linea">${data.colegioAnterior || ""}</span>
       </p>
 
+      ${(data.tipoTransporte || data.distanciaKm) ? `
       <p>
-        Tipo de transporte que utiliza para asistir al C.E.
-        Peatonal <span class="fo-check"></span>
-        Público <span class="fo-check"></span>
-        Privado <span class="fo-check"></span>
-        Microbús <span class="fo-check"></span>
-        distancia en KM <span class="fo-linea-mini"></span>
-      </p>
+        ${data.tipoTransporte ? `Tipo de transporte que utiliza: <strong>${data.tipoTransporte}</strong>` : ""}
+        ${data.distanciaKm ? `&nbsp;&nbsp;Distancia en KM <span class="fo-linea-mini">${data.distanciaKm}</span>` : ""}
+      </p>` : ""}
 
-      <p>
-        ¿Con quién vive?
-        Madre <span class="fo-check"></span>
-        Padre <span class="fo-check"></span>
-        Ambos <span class="fo-check"></span>
-        Parientes <span class="fo-check"></span>
-        Amigos <span class="fo-check"></span>
-      </p>
+      ${data.conQuienVive ? `
+      <p>¿Con quién vive? <strong>${data.conQuienVive}</strong></p>` : ""}
 
+      ${data.enfermedad ? `
       <p>
-        ¿Padece de alguna enfermedad? SI <span class="fo-check">${marcar(data.enfermedad === "Sí")}</span> NO <span class="fo-check">${marcar(data.enfermedad === "No")}</span>
-        ¿Cuál? <span class="fo-linea">${data.cualEnfermedad || ""}</span>
-      </p>
-      <p>
-        Nombre del medicamento que utiliza: <span class="fo-linea">${data.medicamento || ""}</span>
-        ¿En qué dosis? <span class="fo-linea"></span>
-      </p>
+        ¿Padece de alguna enfermedad? <strong>${data.enfermedad}</strong>
+        ${data.cualEnfermedad ? ` &nbsp;&nbsp;¿Cuál? <span class="fo-linea">${data.cualEnfermedad}</span>` : ""}
+      </p>` : ""}
+      ${data.medicamento ? `<p>Nombre del medicamento que utiliza: <span class="fo-linea">${data.medicamento}</span> ¿En qué dosis? <span class="fo-linea"></span></p>` : ""}
       ${data.otros ? `<p>Otros: <span class="fo-linea-larga">${data.otros}</span></p>` : ""}
 
+      ${(data.vacunaCovid || data.zonaResidencia) ? `
       <p>
-        Vacuna COVID-19 SI <span class="fo-check">${marcar(data.vacunaCovid === "Sí")}</span> NO <span class="fo-check">${marcar(data.vacunaCovid === "No")}</span>
-        &nbsp;&nbsp;Zona de residencia: Urbana <span class="fo-check"></span> Rural <span class="fo-check"></span>
-      </p>
-      <p>Dirección de Residencia <span class="fo-linea-larga"></span></p>
+        ${data.vacunaCovid ? `Vacuna COVID-19: <strong>${data.vacunaCovid}</strong>` : ""}
+        ${data.zonaResidencia ? `&nbsp;&nbsp;Zona de residencia: <strong>${data.zonaResidencia}</strong>` : ""}
+      </p>` : ""}
+      ${data.direccionResidencia ? `<p>Dirección de Residencia: <span class="fo-linea-larga">${data.direccionResidencia}</span></p>` : ""}
 
+      ${(data.correoEstudiantil || data.computadoraMineducyt) ? `
       <p>
-        Correo electrónico MINEDUCYT <span class="fo-linea">${data.correoEstudiantil || ""}</span>
-        &nbsp;&nbsp;Posee computadora del MINEDUCYT: SI <span class="fo-check">${marcar(data.computadoraMineducyt === "Sí")}</span> NO <span class="fo-check">${marcar(data.computadoraMineducyt === "No")}</span>
-      </p>
+        ${data.correoEstudiantil ? `Correo electrónico MINEDUCYT <span class="fo-linea">${data.correoEstudiantil}</span>` : ""}
+        ${data.computadoraMineducyt ? `&nbsp;&nbsp;Posee computadora del MINEDUCYT: <strong>${data.computadoraMineducyt}</strong>` : ""}
+      </p>` : ""}
+      ${(data.correoPersonal || data.internet) ? `
       <p>
-        Correo personal <span class="fo-linea">${data.correoPersonal || ""}</span>
-        &nbsp;&nbsp;Posee acceso a internet SI <span class="fo-check">${marcar(data.internet === "Sí")}</span> NO <span class="fo-check">${marcar(data.internet === "No")}</span>
-      </p>
+        ${data.correoPersonal ? `Correo personal <span class="fo-linea">${data.correoPersonal}</span>` : ""}
+        ${data.internet ? `&nbsp;&nbsp;Posee acceso a internet: <strong>${data.internet}</strong>` : ""}
+      </p>` : ""}
 
       <p>
         Talla de camisa <span class="fo-linea-mini">${data.tallaCamisa || ""}</span>
@@ -452,19 +423,15 @@ function generarFichaImprimir(data, expediente) {
         Zapatos <span class="fo-linea-mini">${data.tallaZapatos || ""}</span>
       </p>
 
+      ${data.hermanosCentroeducativo ? `
       <p>
-        Tiene hermano/a en el Centro Escolar: SI <span class="fo-check">${marcar(data.hermanosCentroeducativo === "Sí")}</span> NO <span class="fo-check">${marcar(data.hermanosCentroeducativo === "No")}</span>
-        Nombre: <span class="fo-linea">${data.nombresHermanos || ""}</span> Nivel/Secc: <span class="fo-linea-mini">${data.nivelAcademico || ""}</span>
-      </p>
+        Tiene hermano/a en el Centro Escolar: <strong>${data.hermanosCentroeducativo}</strong>
+        ${data.nombresHermanos ? ` &nbsp;&nbsp;Nombre: <span class="fo-linea">${data.nombresHermanos}</span>` : ""}
+        ${data.nivelAcademico ? ` Nivel/Secc: <span class="fo-linea-mini">${data.nivelAcademico}</span>` : ""}
+      </p>` : ""}
 
-      <h3 class="fo-subtitulo">Seleccione con una "X" el Bachillerato que desea estudiar</h3>
-      <p><strong>Bachillerato General:</strong> <span class="fo-check">${marcar(esGeneral)}</span></p>
-      <p><strong>Bachillerato Técnico Vocacional</strong></p>
-      <p>
-        Administrativo Contable <span class="fo-check">${marcar(esAdminContable)}</span>
-        &nbsp;&nbsp;Servicios Turísticos <span class="fo-check">${marcar(esServiciosTuristicos)}</span>
-        &nbsp;&nbsp;Desarrollo de Software <span class="fo-check">${marcar(esDesarrolloSoftware)}</span>
-      </p>
+      <h3 class="fo-subtitulo">Bachillerato que estudiará</h3>
+      <p><strong>${data.especialidad || "—"}</strong></p>
 
       <h3 class="fo-subtitulo">Datos del Responsable</h3>
       <p>Responsable: <span class="fo-linea-larga">${data.responsable || ""}</span></p>
