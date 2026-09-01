@@ -277,26 +277,12 @@ if (nie) {
    FUNCIONES FALTANTES (AGREGADAS)
 ========================================================= */
 
-// Función para bloquear el formulario cuando el estudiante es mayor de 17 años
-function bloquearFormulario() {
-  const inputs = form.querySelectorAll("input, select, textarea, button");
-  inputs.forEach(input => {
-    if (input.id !== "fechaNacimiento") { // Permitir cambiar fecha de nacimiento
-      input.disabled = true;
-    }
-  });
-  if (btnGuardar) btnGuardar.disabled = true;
-  if (btnSiguiente) btnSiguiente.disabled = true;
-}
-
-// Función para desbloquear el formulario
-function desbloquearFormulario() {
-  const inputs = form.querySelectorAll("input, select, textarea, button");
-  inputs.forEach(input => {
-    input.disabled = false;
-  });
-  if (btnGuardar) btnGuardar.disabled = false;
-  if (btnSiguiente) btnSiguiente.disabled = false;
+// Bloquea únicamente el avance. La fecha y el grado quedan disponibles
+// para que el usuario pueda corregirlos sin perder lo que ya escribió.
+function actualizarBloqueoEdad(bloqueado) {
+  if (form) form.dataset.edadBloqueada = bloqueado ? "true" : "false";
+  if (btnSiguiente && pasoActual === 1) btnSiguiente.disabled = bloqueado;
+  if (btnGuardar) btnGuardar.disabled = bloqueado;
 }
 
 // Función para configurar campos de salud
@@ -909,7 +895,12 @@ function sincronizarCorreoEstudiantilConNie() {
 function configurarFechaNacimiento() {
   if (!fechaNacimiento) return;
 
-  fechaNacimiento.setAttribute("max", "2010-12-31");
+  // No se permite seleccionar una fecha futura. Los límites por grado se
+  // comprueban con la edad calculada a la fecha de corte del ciclo 2027.
+  const hoy = new Date();
+  const hoyLocal = new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000)
+    .toISOString().slice(0, 10);
+  fechaNacimiento.setAttribute("max", hoyLocal);
 
   fechaNacimiento.addEventListener("change", function() {
     calcularEdad();
@@ -921,19 +912,6 @@ function configurarFechaNacimiento() {
     validarSobreedad();
   });
 
-  fechaNacimiento.addEventListener("blur", function() {
-    const valor = this.value;
-    if (valor) {
-      const fecha = new Date(valor);
-      const anio = fecha.getFullYear();
-      if (anio > 2010) {
-        alert("⚠️ La fecha de nacimiento debe ser hasta el año 2010 como máximo.");
-        this.value = "";
-        if (edad) edad.value = "";
-        this.focus();
-      }
-    }
-  });
 }
 
 /* =========================================================
@@ -948,12 +926,12 @@ function calcularEdad() {
   }
 
   const nacimiento = new Date(fechaNacimiento.value + "T00:00:00");
-  const hoy = new Date();
+  const fechaCorte = new Date("2027-01-01T00:00:00");
 
-  let anios = hoy.getFullYear() - nacimiento.getFullYear();
-  const mes = hoy.getMonth() - nacimiento.getMonth();
+  let anios = fechaCorte.getFullYear() - nacimiento.getFullYear();
+  const mes = fechaCorte.getMonth() - nacimiento.getMonth();
 
-  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+  if (mes < 0 || (mes === 0 && fechaCorte.getDate() < nacimiento.getDate())) {
     anios--;
   }
 
@@ -965,28 +943,60 @@ function calcularEdad() {
    VALIDAR SOBREEDAD
 ========================================================= */
 function validarSobreedad() {
-  if (!edad) return;
+  if (!edad || !grado) return;
 
+  const reglas = {
+    "Primer Año": { minima: 14, maxima: 17 },
+    "Segundo Año": { minima: 15, maxima: 20 },
+    "Tercer Año": { minima: 17, maxima: 20 },
+  };
   const mensaje = document.getElementById("mensajeBloqueoEdad");
+  const estadoRevision = document.getElementById("estadoRevisionEdad");
   const edadActual = parseInt(edad.value);
+  const regla = reglas[grado.value];
 
-  if (edadActual > 17) {
-    mensaje.innerHTML = `
-      ❌ <br><br>
-      El estudiante tiene <b>${edadActual} años</b>.
-      <br><br>
-      Según la normativa del Instituto Nacional de Comercio,
-      no puede realizar la matrícula en línea porque supera
-      la edad máxima permitida.
-      <br><br>
-      Por favor preséntese personalmente a la institución para
-      recibir orientación e información sobre su proceso de ingreso.
-    `;
+  mensaje.classList.remove("mostrar");
+  mensaje.textContent = "";
+  if (avisoSobreedad) {
+    avisoSobreedad.classList.remove("mostrar", "valido", "revision");
+    avisoSobreedad.textContent = "";
+  }
+
+  if (!regla || Number.isNaN(edadActual)) {
+    if (estadoRevision) estadoRevision.value = "No evaluada";
+    actualizarBloqueoEdad(false);
+    return;
+  }
+
+  if (edadActual < regla.minima) {
+    mensaje.innerHTML = `El estudiante tendrá <b>${edadActual} años</b> al 1 de enero de 2027. ` +
+      `${grado.value} requiere una edad mínima de <b>${regla.minima} años</b>.`;
     mensaje.classList.add("mostrar");
-    bloquearFormulario();
+    if (estadoRevision) estadoRevision.value = "No permitido por edad mínima";
+    actualizarBloqueoEdad(true);
+  } else if (edadActual > regla.maxima && grado.value === "Primer Año") {
+    mensaje.innerHTML = `El estudiante tendrá <b>${edadActual} años</b> al 1 de enero de 2027. ` +
+      `Primer Año permite una edad máxima de <b>${regla.maxima} años</b>.`;
+    mensaje.classList.add("mostrar");
+    if (estadoRevision) estadoRevision.value = "No permitido por edad máxima";
+    actualizarBloqueoEdad(true);
+  } else if (edadActual > regla.maxima) {
+    if (avisoSobreedad) {
+      avisoSobreedad.innerHTML = `El estudiante tendrá <b>${edadActual} años</b> al 1 de enero de 2027 y ` +
+        `supera el máximo regular de <b>${regla.maxima} años</b> para ${grado.value}. ` +
+        `Puede continuar, pero la solicitud quedará <b>pendiente de revisión administrativa</b>.`;
+      avisoSobreedad.classList.add("mostrar", "revision");
+    }
+    if (estadoRevision) estadoRevision.value = "Pendiente";
+    actualizarBloqueoEdad(false);
   } else {
-    mensaje.classList.remove("mostrar");
-    desbloquearFormulario();
+    if (avisoSobreedad) {
+      avisoSobreedad.innerHTML = `Edad válida: <b>${edadActual} años</b>. ` +
+        `El rango permitido para ${grado.value} es de ${regla.minima} a ${regla.maxima} años.`;
+      avisoSobreedad.classList.add("mostrar", "valido");
+    }
+    if (estadoRevision) estadoRevision.value = "No requerida";
+    actualizarBloqueoEdad(false);
   }
 }
 

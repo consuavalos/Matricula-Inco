@@ -1,3 +1,6 @@
+import { protegerRuta } from "../auth-guard.js";
+const accesoDocente = await protegerRuta("docente");
+
 import { db } from "../firebase-config.js";
 import {
   collection,

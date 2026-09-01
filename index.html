@@ -57,26 +57,19 @@
         Nuevo Ingreso
     </button>
 
-    <button
-        type="button"
-        class="btn-ingreso btn-docente"
-        id="btnDocente">
-        Docente
-    </button>
-
 </div>
     </div>
   </div>
 
-  <!-- ================= MODAL: ADMINISTRADOR (Usuario / Contraseña) ================= -->
+  <!-- ================= MODAL: ACCESO DEL PERSONAL ================= -->
   <div class="modal-overlay oculto" id="modalAdministrador" aria-hidden="true">
     <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloModalAdmin">
       <button type="button" class="modal-cerrar" data-cerrar="modalAdministrador" aria-label="Cerrar">&times;</button>
-      <h3 id="tituloModalAdmin" class="modal-titulo">Acceso Administrador</h3>
-      <p class="modal-subtitulo">Ingrese sus credenciales</p>
+      <h3 id="tituloModalAdmin" class="modal-titulo">Acceso al personal</h3>
+      <p class="modal-subtitulo">Administradores y docentes</p>
 
       <form class="admin-login" id="formAdministrador" novalidate>
-        <label for="usuarioAdmin">Usuario</label>
+        <label for="usuarioAdmin">Usuario o correo</label>
         <input type="text" id="usuarioAdmin" name="usuario" autocomplete="username" required>
 
         <label for="passwordAdmin">Contraseña</label>
@@ -86,30 +79,10 @@
 
         <button type="submit" class="btn-ingreso btn-admin">Acceder</button>
       </form>
+
     </div>
   </div>
 
-  <!-- ================= MODAL: DOCENTE (Usuario / Contraseña) ================= -->
-  <div class="modal-overlay oculto" id="modalDocente" aria-hidden="true">
-    <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloModalDocente">
-      <button type="button" class="modal-cerrar" data-cerrar="modalDocente" aria-label="Cerrar">&times;</button>
-      <h3 id="tituloModalDocente" class="modal-titulo">Acceso Docente</h3>
-      <p class="modal-subtitulo">Ingrese sus credenciales</p>
-
-      <form class="admin-login" id="formDocente" novalidate>
-        <label for="usuarioDocente">Usuario</label>
-        <input type="text" id="usuarioDocente" name="usuario" autocomplete="username" required>
-
-        <label for="passwordDocente">Contraseña</label>
-        <input type="password" id="passwordDocente" name="password" autocomplete="current-password" required>
-
-        <p class="mensaje-login" id="mensajeDocente"></p>
-
-        <button type="submit" class="btn-ingreso btn-docente">Acceder</button>
-      </form>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

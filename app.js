@@ -1,3 +1,5 @@
+import { supabase } from "./supabase-config.js";
+
 document.addEventListener('DOMContentLoaded', function () {
 
     // =====================================================
@@ -7,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnIngresar = document.getElementById('btnIngresar');
     const btnAdministrador = document.getElementById('btnAdministrador');
     const btnNuevoIngreso = document.getElementById('btnNuevoIngreso');
-    const btnDocente = document.getElementById('btnDocente');
 
 
     // =====================================================
@@ -16,7 +17,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const modalIngresar = document.getElementById('modalIngresar');
     const modalAdministrador = document.getElementById('modalAdministrador');
-    const modalDocente = document.getElementById('modalDocente');
 
 
     // =====================================================
@@ -88,23 +88,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // =====================================================
-    // BOTÓN DOCENTE
-    // =====================================================
-
-    if (btnDocente) {
-
-        btnDocente.addEventListener('click', function () {
-
-            cerrarModal(modalIngresar);
-
-            abrirModal(modalDocente);
-
-        });
-
-    }
-
-
-    // =====================================================
     // BOTONES X
     // =====================================================
 
@@ -131,8 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     [
         modalIngresar,
-        modalAdministrador,
-        modalDocente
+        modalAdministrador
     ].forEach(function (modal) {
 
         if (!modal) return;
@@ -160,7 +142,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             cerrarModal(modalIngresar);
             cerrarModal(modalAdministrador);
-            cerrarModal(modalDocente);
 
         }
 
@@ -168,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // =====================================================
-    // LOGIN ADMINISTRADOR
+    // LOGIN ÚNICO DEL PERSONAL (mantiene permisos por rol)
     // =====================================================
 
     const formAdministrador =
@@ -191,11 +172,11 @@ document.addEventListener('DOMContentLoaded', function () {
         mensajeAdmin
     ) {
 
-        formAdministrador.addEventListener('submit', function (evento) {
+        formAdministrador.addEventListener('submit', async function (evento) {
 
             evento.preventDefault();
 
-            const usuario =
+            const correo =
                 usuarioAdmin.value.trim();
 
             const clave =
@@ -208,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
             passwordAdmin.classList.remove('campo-error');
 
 
-            if (usuario === '' || clave === '') {
+            if (correo === '' || clave === '') {
 
                 mensajeAdmin.textContent =
                     'Complete todos los campos.';
@@ -216,113 +197,47 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            const boton = formAdministrador.querySelector('button[type="submit"]');
+            if (boton) boton.disabled = true;
+            mensajeAdmin.textContent = 'Verificando credenciales...';
 
-            if (
-                usuario === 'admin' &&
-                clave === 'Admin-INCO'
-            ) {
+            try {
+                const { data: authData, error: authError } =
+                    await supabase.auth.signInWithPassword({ email: correo, password: clave });
 
-                mensajeAdmin.textContent =
-                    'Usuario y contraseña correctos.';
+                if (authError) throw authError;
 
-                console.log('Entrando al administrador...');
+                const { data: perfil, error: perfilError } = await supabase
+                    .from('perfiles')
+                    .select('nombre, rol')
+                    .eq('id', authData.user.id)
+                    .single();
 
-                // Guardamos la sesión: admin.html revisa esto antes de dejar entrar
-                sessionStorage.setItem('rolUsuario', 'administrador');
-                sessionStorage.setItem('nombreUsuario', usuario);
+                if (perfilError || !perfil) {
+                    await supabase.auth.signOut();
+                    throw new Error('El usuario no tiene un perfil autorizado.');
+                }
 
-                window.location.href = 'Administrador/admin.html';
+                sessionStorage.setItem('rolUsuario', perfil.rol);
+                sessionStorage.setItem('nombreUsuario', perfil.nombre || correo);
+                mensajeAdmin.textContent = 'Acceso correcto.';
 
-                return;
+                if (perfil.rol === 'administrador') {
+                    window.location.href = 'Administrador/admin.html';
+                } else if (perfil.rol === 'docente') {
+                    window.location.href = 'Docente/docente.html';
+                } else {
+                    await supabase.auth.signOut();
+                    throw new Error('Rol de usuario no autorizado.');
+                }
+            } catch (error) {
+                mensajeAdmin.textContent = error.message === 'Invalid login credentials'
+                    ? 'Correo o contraseña incorrectos.'
+                    : `No se pudo iniciar sesión: ${error.message}`;
+                usuarioAdmin.classList.add('campo-error');
+                passwordAdmin.classList.add('campo-error');
+                if (boton) boton.disabled = false;
             }
-
-
-            mensajeAdmin.textContent =
-                'Usuario o contraseña incorrectos.';
-
-            usuarioAdmin.classList.add('campo-error');
-            passwordAdmin.classList.add('campo-error');
-
-        });
-
-    }
-
-
-    // =====================================================
-    // LOGIN DOCENTE
-    // =====================================================
-
-    const formDocente =
-        document.getElementById('formDocente');
-
-    const usuarioDocente =
-        document.getElementById('usuarioDocente');
-
-    const passwordDocente =
-        document.getElementById('passwordDocente');
-
-    const mensajeDocente =
-        document.getElementById('mensajeDocente');
-
-
-    if (
-        formDocente &&
-        usuarioDocente &&
-        passwordDocente &&
-        mensajeDocente
-    ) {
-
-        formDocente.addEventListener('submit', function (evento) {
-
-            evento.preventDefault();
-
-            const usuario =
-                usuarioDocente.value.trim();
-
-            const clave =
-                passwordDocente.value.trim();
-
-
-            mensajeDocente.textContent = '';
-
-            usuarioDocente.classList.remove('campo-error');
-            passwordDocente.classList.remove('campo-error');
-
-
-            if (usuario === '' || clave === '') {
-
-                mensajeDocente.textContent =
-                    'Complete todos los campos.';
-
-                return;
-            }
-
-
-            if (
-                usuario === 'docente' &&
-                clave === 'INCOdocente'
-            ) {
-
-                mensajeDocente.textContent =
-                    'Usuario y contraseña correctos.';
-
-                console.log('Entrando al docente...');
-
-                // Guardamos la sesión: docente.html revisa esto antes de dejar entrar
-                sessionStorage.setItem('rolUsuario', 'docente');
-                sessionStorage.setItem('nombreUsuario', usuario);
-
-                window.location.href ='Docente/docente.html';
-
-                return;
-            }
-
-
-            mensajeDocente.textContent =
-                'Usuario o contraseña incorrectos.';
-
-            usuarioDocente.classList.add('campo-error');
-            passwordDocente.classList.add('campo-error');
 
         });
 

@@ -1,3 +1,6 @@
+import { protegerRuta, cerrarSesionSupabase } from "../auth-guard.js";
+const accesoAdministrador = await protegerRuta("administrador");
+
 import { db } from "../firebase-config.js";
 import {
   collection,
@@ -626,10 +629,8 @@ document.addEventListener("keydown", function (e) {
 /* =========================================================
    CERRAR SESIÓN
 ========================================================= */
-window.cerrarSesion = function () {
-  sessionStorage.removeItem("rolUsuario");
-  sessionStorage.removeItem("nombreUsuario");
-  window.location.href = "../index.html";
+window.cerrarSesion = async function () {
+  await cerrarSesionSupabase();
 };
 
 /* =========================================================

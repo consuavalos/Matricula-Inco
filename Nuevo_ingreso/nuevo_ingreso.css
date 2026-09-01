@@ -460,6 +460,22 @@ label[for="correoPersonal"]::before { content: "✉️"; }
   display: block;
 }
 
+.aviso-sobreedad.valido {
+  background: #e8f5e9;
+  border-left-color: #2e7d32;
+  color: #1b5e20;
+}
+
+.aviso-sobreedad.valido::before {
+  content: "✅ ";
+}
+
+.aviso-sobreedad.revision {
+  background: #fff8e1;
+  border-left-color: #f9a825;
+  color: #6d4c00;
+}
+
 /* ---------- FORM STEPS ---------- */
 .form-step {
   display: none;

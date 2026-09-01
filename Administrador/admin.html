@@ -305,18 +305,6 @@
 
 <body>
 
-  <script>
-
-    // Protección simple de la página
-    // Solo entra quien inició sesión como Administrador
-
-    if (sessionStorage.getItem('rolUsuario') !== 'administrador') {
-      window.location.href = '../index.html';
-    }
-
-  </script>
-
-
   <div class="admin-layout">
 
     <!-- =====================================================
