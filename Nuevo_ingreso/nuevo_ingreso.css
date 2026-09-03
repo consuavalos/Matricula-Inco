@@ -347,6 +347,12 @@ label[for="correoPersonal"]::before { content: "✉️"; }
   transition: border 0.2s, box-shadow 0.2s, transform 0.15s;
 }
 
+.campo select {
+  width: 100%;
+  -webkit-appearance: menulist;
+  appearance: auto;
+}
+
 .campo input:hover,
 .campo select:hover {
   border-color: #b7c3d6;
@@ -382,8 +388,8 @@ label[for="correoPersonal"]::before { content: "✉️"; }
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  width: 140px;
-  height: 170px;
+  width: 168px;
+  aspect-ratio: 3.5 / 2.5;
   background: repeating-linear-gradient(135deg, #eef2f7, #eef2f7 10px, #e7edf3 10px, #e7edf3 20px);
   border: 2.5px dashed #7fb89a;
   border-radius: 14px;
@@ -391,18 +397,25 @@ label[for="correoPersonal"]::before { content: "✉️"; }
   font-weight: 600;
   color: #1e3a5f;
   text-align: center;
-  padding: 0.6rem;
+  padding: 0;
+  overflow: hidden;
   transition: background 0.2s, transform 0.15s, border-color 0.2s;
 }
 
-.foto-label::before {
-  content: "📷";
-  font-size: 1.8rem;
-}
-
-.foto-label span {
+.foto-placeholder {
+  padding: 0.6rem;
   font-size: 0.82rem;
   line-height: 1.3;
+}
+
+.foto-placeholder small {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #5a6a7a;
+}
+
+.foto-label.con-foto .foto-placeholder {
+  display: none;
 }
 
 .foto-label:hover {
@@ -427,17 +440,16 @@ label[for="correoPersonal"]::before { content: "✉️"; }
 }
 
 .vista-previa {
-  margin-top: 0;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .vista-previa img {
-  width: 140px;
-  height: 170px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   display: block;
-  border: 3px solid var(--verde-oscuro);
-  border-radius: 14px;
-  box-shadow: 0 8px 18px rgba(15,92,59,0.25);
 }
 
 /* ---------- AVISO SOBREEDAD ---------- */

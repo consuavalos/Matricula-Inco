@@ -1,11 +1,8 @@
-import { db } from "../firebase-config.js";
 import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  crearMatricula,
+  nieYaExiste,
+  obtenerSiguienteFicha,
+} from "../supabase-data.js";
 
 /* =========================================================
    REFERENCIAS
@@ -56,7 +53,7 @@ const mensajesPersonalizados = {
   segundoNombre: "Ingrese el segundo nombre (solo letras, máximo 10 caracteres).",
   fechaNacimiento: "Seleccione la fecha de nacimiento del estudiante.",
   sexo: "Seleccione el sexo del estudiante.",
-  telefonoEstudiante: "Formato requerido: 0000-0000.",
+  telefonoEstudiante: "Ingrese exactamente 8 números.",
   correoEstudiantil: "Escriba solo números; el dominio @clases.edu.sv se agrega automáticamente.",
   correoPersonal: "Ingrese un correo electrónico válido con arroba (@).",
   grado: "Seleccione el grado que cursará.",
@@ -79,8 +76,8 @@ const mensajesPersonalizados = {
   responsable: "Ingrese el nombre del responsable (solo letras).",
   parentesco: "Ingrese el parentesco (solo letras).",
   duiResponsable: "Formato requerido: 00000000-0.",
-  telefonoResponsable: "Formato requerido: 0000-0000.",
-  whatsappResponsable: "Formato requerido: 0000-0000.",
+  telefonoResponsable: "Ingrese exactamente 8 números.",
+  whatsappResponsable: "Ingrese exactamente 8 números.",
   madreNombre: "Ingrese el nombre completo de la madre (solo letras).",
   madreOcupacion: "Ingrese la ocupación de la madre.",
   madreLugarTrabajo: "Ingrese el lugar de trabajo de la madre.",
@@ -95,7 +92,7 @@ const mensajesPersonalizados = {
   padreLugarNacimiento: "Ingrese el lugar de nacimiento del padre.",
   padreFechaNacimiento: "Seleccione la fecha de nacimiento del padre.",
   padreCelular: "Formato requerido: 0000-0000.",
-  partidaNumero: "Ingrese el número de partida (solo números).",
+  partidaNumero: "Ingrese el número de partida (solo números, máximo 5 dígitos).",
   folio: "Ingrese el folio (solo números).",
   tomo: "Ingrese el tomo (solo números).",
   libro: "Ingrese el libro (solo números)."
@@ -219,16 +216,14 @@ todosLosCampos.forEach((el) => {
 });
 
 /* =========================================================
-   NIE DUPLICADO — verificar contra Firestore
+   NIE DUPLICADO — verificar contra Supabase
 ========================================================= */
 
-// Consulta Firestore y devuelve true si el NIE ya existe en "matriculas"
+// Consulta Supabase y devuelve true si el NIE ya existe.
 async function nieYaExisteEnBD(valorNie) {
   if (!valorNie) return false;
   try {
-    const q = query(collection(db, "matriculas"), where("nie", "==", valorNie));
-    const snapshot = await getDocs(q);
-    return !snapshot.empty;
+    return await nieYaExiste(valorNie);
   } catch (error) {
     console.error("Error verificando NIE duplicado:", error);
     // Si falla la consulta, no bloqueamos al usuario por un problema de red/permisos;
@@ -327,6 +322,7 @@ function configurarFoto() {
     const file = this.files[0];
     if (!file) {
       if (vistaPrevia) vistaPrevia.innerHTML = "";
+      this.closest(".foto-label")?.classList.remove("con-foto");
       return;
     }
 
@@ -353,11 +349,10 @@ function configurarFoto() {
       const img = document.createElement("img");
       img.src = fotoBase64;
       img.alt = "Foto del estudiante";
-      img.style.maxWidth = "100%";
-      img.style.height = "auto";
       if (vistaPrevia) {
         vistaPrevia.innerHTML = "";
         vistaPrevia.appendChild(img);
+        fotoInput.closest(".foto-label")?.classList.add("con-foto");
       }
       
       // Guardar el Base64 en un input oculto para enviarlo
@@ -725,7 +720,7 @@ if (form) {
         mensajeExito.style.color = "blue";
       }
 
-      const docRef = await addDoc(collection(db, "matriculas"), data);
+      const docRef = await crearMatricula(data);
       console.log("✅ Matrícula guardada con ID:", docRef.id);
 
       if (mensajeExito) {
@@ -739,6 +734,7 @@ if (form) {
       setTimeout(async () => {
         form.reset();
         if (vistaPrevia) vistaPrevia.innerHTML = "";
+        fotoInput?.closest(".foto-label")?.classList.remove("con-foto");
         if (edad) edad.value = "";
         if (nie) nie.dataset.duplicado = "false";
         
@@ -809,11 +805,7 @@ async function generarNumeroFicha() {
   if (!numeroFicha) return;
 
   try {
-    const snapshot = await getDocs(collection(db, "matriculas"));
-    const total = snapshot.size + 1;
-    const correlativo = String(total).padStart(3, "0");
-    const anio = new Date().getFullYear();
-    numeroFicha.value = `FIC-${anio}-${correlativo}`;
+    numeroFicha.value = await obtenerSiguienteFicha();
     console.log("📝 Número de ficha generado:", numeroFicha.value);
   } catch (error) {
     console.error("Error generando número de ficha:", error);

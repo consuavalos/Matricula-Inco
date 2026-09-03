@@ -1,15 +1,9 @@
 import { protegerRuta } from "../auth-guard.js";
-const accesoDocente = await protegerRuta("docente");
-
-import { db } from "../firebase-config.js";
 import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  updateDoc,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  buscarMatriculaPorNie,
+  guardarDocumentos as guardarDocumentosSupabase,
+} from "../supabase-data.js";
+const accesoDocente = await protegerRuta("docente");
 
 /* =========================================================
    INDICACIONES / DOCUMENTOS REQUERIDOS POR AÑO
@@ -136,16 +130,7 @@ window.buscarMatricula = async function () {
     mostrarMensaje("⏳ Buscando...", "loading");
     ocultarResultados();
 
-    const matriculasRef = collection(db, "matriculas");
-    const q1 = query(matriculasRef, where("nie", "==", valor));
-    const snapshot1 = await getDocs(q1);
-
-    let encontrado = null;
-    snapshot1.forEach((docSnap) => {
-      if (!encontrado) {
-        encontrado = { id: docSnap.id, ...docSnap.data() };
-      }
-    });
+    const encontrado = await buscarMatriculaPorNie(valor);
 
     if (!encontrado) {
       mostrarMensaje("❌ No se encontró ningún estudiante con ese NIE.", "error");
@@ -335,9 +320,7 @@ window.guardarDocumentos = async function () {
     mensajeDocumentos.textContent = "⏳ Guardando...";
     mensajeDocumentos.style.color = "#1976d2";
 
-    await updateDoc(doc(db, "matriculas", matriculaActual.id), {
-      documentosChecklist: registro,
-    });
+    await guardarDocumentosSupabase(matriculaActual, registro);
 
     matriculaActual.documentosChecklist = registro;
 

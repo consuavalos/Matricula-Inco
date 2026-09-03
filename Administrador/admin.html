@@ -343,6 +343,13 @@
             Reportes
           </a>
 
+          <a
+            href="#"
+            onclick="mostrarDocentes()"
+          >
+            Docentes
+          </a>
+
         </nav>
 
       </div>
@@ -652,6 +659,33 @@
       <!-- ===================================================
            RESULTADOS DE BÚSQUEDA
            =================================================== -->
+
+      <section
+        class="card-busqueda"
+        id="seccionDocentes"
+        style="display: none;"
+      >
+        <h2>Docentes registrados</h2>
+        <p>Personal docente autorizado para revisar expedientes.</p>
+        <button type="button" class="btn-nuevo-usuario" onclick="abrirNuevoUsuario()">
+          + Nuevo usuario
+        </button>
+        <p id="mensajeDocentes" class="mensaje-admin"></p>
+
+        <div id="tablaDocentesContenedor" class="tabla-responsive" style="display:none; margin-top:20px;">
+          <table class="tabla-reportes">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Rol</th>
+                <th>Fecha de registro</th>
+              </tr>
+            </thead>
+            <tbody id="cuerpoTablaDocentes"></tbody>
+          </table>
+        </div>
+      </section>
 
       <section
         id="resultadosBusqueda"
@@ -1199,6 +1233,14 @@
               ></p>
             </div>
 
+            <div class="campo">
+              <label>RevisiÃ³n realizada por</label>
+              <p
+                id="exp_docenteResponsable"
+                style="margin:6px 0 0; font-weight:600; color:#1a3a2b;"
+              >-</p>
+            </div>
+
           </div>
 
 
@@ -1225,6 +1267,46 @@
 
     </div>
 
+  </div>
+
+  <div
+    id="modalNuevoUsuario"
+    class="modal-overlay"
+    onclick="if (event.target === this) cerrarNuevoUsuario()"
+  >
+    <div class="modal-expediente modal-usuario">
+      <div class="modal-expediente-header">
+        <h3>Nuevo usuario docente</h3>
+        <button type="button" class="modal-cerrar" onclick="cerrarNuevoUsuario()" aria-label="Cerrar">×</button>
+      </div>
+
+      <div class="modal-expediente-body">
+        <form id="formNuevoUsuario">
+          <div class="campo campo-full">
+            <label for="nuevoUsuarioNombre">Nombre completo</label>
+            <input id="nuevoUsuarioNombre" name="nombre" type="text" maxlength="80" required autocomplete="name">
+          </div>
+
+          <div class="campo campo-full">
+            <label for="nuevoUsuarioCorreo">Correo electrónico</label>
+            <input id="nuevoUsuarioCorreo" name="correo" type="email" required autocomplete="email">
+          </div>
+
+          <div class="campo campo-full">
+            <label for="nuevoUsuarioContrasena">Contraseña inicial</label>
+            <input id="nuevoUsuarioContrasena" name="contrasena" type="password" minlength="8" required autocomplete="new-password">
+            <small>Mínimo 8 caracteres. Entréguesela únicamente al docente.</small>
+          </div>
+
+          <p id="mensajeNuevoUsuario" class="mensaje-admin" aria-live="polite"></p>
+
+          <div class="acciones-usuario">
+            <button type="button" class="btn-limpiar-reporte" onclick="cerrarNuevoUsuario()">Cancelar</button>
+            <button type="submit" id="btnCrearDocente" class="btn-nuevo-usuario">Crear docente</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
 

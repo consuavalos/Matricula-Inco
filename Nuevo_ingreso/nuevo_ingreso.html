@@ -130,15 +130,15 @@
 <div class="campo">
   <label for="telefonoEstudiante">Teléfono del estudiante</label>
   <input
-    type="text"
+    type="tel"
     id="telefonoEstudiante"
     name="telefonoEstudiante"
     required
-    inputmode="numeric"
+    inputmode="tel"
     maxlength="9"
-    pattern="[0-9]{4}-[0-9]{4}"
+    pattern="[0-9]{4}-?[0-9]{4}"
     placeholder="0000-0000"
-    title="Debe contener exactamente 8 números en formato 0000-0000"
+    title="Ingrese 8 números; puede escribirlos con o sin guion"
   />
 </div>
           <div class="campo campo-full">
@@ -165,11 +165,11 @@
         <h3 class="subtitulo-seccion">Fotografía</h3>
         <div class="campo-foto">
           <label for="fotoEstudiante" class="foto-label">
-            <span>📷 Subir foto (JPG / PNG)</span>
+            <span class="foto-placeholder">📷 Subir foto (JPG / PNG)<br><small>Opcional</small></span>
             <input type="file" id="fotoEstudiante" name="fotoEstudiante" accept=".jpg,.jpeg,.png" />
+            <div id="vistaPreviaFoto" class="vista-previa"></div>
           </label>
           <p class="foto-requisitos">Tamaño recomendado: 3.5 x 2.5 cm</p>
-          <div id="vistaPreviaFoto" class="vista-previa"></div>
         </div>
       </section>
 
@@ -395,27 +395,27 @@
 <div class="campo">
   <label for="telefonoResponsable">Teléfono del responsable</label>
   <input
-    type="text"
+    type="tel"
     id="telefonoResponsable"
     name="telefonoResponsable"
     required
-    inputmode="numeric"
+    inputmode="tel"
     maxlength="9"
-    pattern="[0-9]{4}-[0-9]{4}"
+    pattern="[0-9]{4}-?[0-9]{4}"
     placeholder="0000-0000"
-    title="Debe contener exactamente 8 números en formato 0000-0000"/>
+    title="Ingrese 8 números; puede escribirlos con o sin guion"/>
 </div>
 <div class="campo">
   <label for="whatsappResponsable">WhatsApp</label>
   <input
-    type="text"
+    type="tel"
     id="whatsappResponsable"
     name="whatsappResponsable"
-    inputmode="numeric"
+    inputmode="tel"
     maxlength="9"
-    pattern="[0-9]{4}-[0-9]{4}"
+    pattern="[0-9]{4}-?[0-9]{4}"
     placeholder="0000-0000"
-    title="Debe contener exactamente 8 números en formato 0000-0000"/>
+    title="Ingrese 8 números; puede escribirlos con o sin guion"/>
 </div>
         </div>
     </section>
@@ -445,11 +445,11 @@
 <div class="campo">
   <label for="madreDui">Número de DUI</label>
   <input
-    type="text"
+    type="tel"
     id="madreDui"
     name="madreDui"
 
-    inputmode="numeric"
+    inputmode="tel"
     maxlength="10"
     pattern="[0-9]{8}-[0-9]"
     placeholder="00000000-0"
@@ -467,15 +467,15 @@
 <div class="campo">
   <label for="madreCelular">Número de celular</label>
   <input
-    type="text"
+    type="tel"
     id="madreCelular"
     name="madreCelular"
 
-    inputmode="numeric"
+    inputmode="tel"
     maxlength="9"
-    pattern="[0-9]{4}-[0-9]{4}"
+    pattern="[0-9]{4}-?[0-9]{4}"
     placeholder="0000-0000"
-    title="Debe contener exactamente 8 números en formato 0000-0000"
+    title="Ingrese 8 números; puede escribirlos con o sin guion"
   />
 </div>
         </div>
@@ -500,11 +500,11 @@
 <div class="campo">
   <label for="padreDui">Número de DUI</label>
   <input
-    type="text"
+    type="tel"
     id="padreDui"
     name="padreDui"
 
-    inputmode="numeric"
+    inputmode="tel"
     maxlength="10"
     pattern="[0-9]{8}-[0-9]"
     placeholder="00000000-0"
@@ -522,15 +522,15 @@
 <div class="campo">
   <label for="padreCelular">Número de celular</label>
   <input
-    type="text"
+    type="tel"
     id="padreCelular"
     name="padreCelular"
 
-    inputmode="numeric"
+    inputmode="tel"
     maxlength="9"
-    pattern="[0-9]{4}-[0-9]{4}"
+    pattern="[0-9]{4}-?[0-9]{4}"
     placeholder="0000-0000"
-    title="Debe contener exactamente 8 números en formato 0000-0000"
+    title="Ingrese 8 números; puede escribirlos con o sin guion"
   />
 </div>
         </div>
@@ -552,8 +552,9 @@
           <div class="campo">
             <label for="partidaNumero">Partida N°</label>
             <input type="text" id="partidaNumero" name="partidaNumero" required
-                   inputmode="numeric" pattern="[0-9]+"
-                   title="Solo se permiten números" />
+                   inputmode="numeric" maxlength="5" pattern="[0-9]+"
+                   placeholder="00000"
+                   title="Solo se permiten números, máximo 5 dígitos" />
           </div>
           <div class="campo">
             <label for="folio">Folio</label>

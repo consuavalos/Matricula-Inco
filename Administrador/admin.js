@@ -1,16 +1,14 @@
 import { protegerRuta, cerrarSesionSupabase } from "../auth-guard.js";
-const accesoAdministrador = await protegerRuta("administrador");
-
-import { db } from "../firebase-config.js";
 import {
-  collection,
-  getDocs,
-  query,
-  where,
-  deleteDoc,
-  doc,
-  updateDoc,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  actualizarMatricula,
+  buscarMatriculaPorNie,
+  crearDocente,
+  eliminarMatricula as eliminarMatriculaSupabase,
+  listarDocentes,
+  listarMatriculas,
+  obtenerPerfil,
+} from "../supabase-data.js";
+const accesoAdministrador = await protegerRuta("administrador");
 
 /* =========================================================
    INDICACIONES / DOCUMENTOS REQUERIDOS POR AÑO
@@ -105,17 +103,7 @@ window.buscarMatricula = async function () {
     mostrarMensaje("⏳ Buscando...", "loading");
     ocultarResultados();
 
-    const matriculasRef = collection(db, "matriculas");
-    const q1 = query(matriculasRef, where("nie", "==", valor));
-    const snapshot1 = await getDocs(q1);
-
-    let encontrado = null;
-
-    snapshot1.forEach((docSnap) => {
-      if (!encontrado) {
-        encontrado = { id: docSnap.id, ...docSnap.data() };
-      }
-    });
+    const encontrado = await buscarMatriculaPorNie(valor);
 
     if (!encontrado) {
       mostrarMensaje("❌ No se encontró ninguna matrícula con ese NIE.", "error");
@@ -550,7 +538,7 @@ function formatearFechaHora(iso) {
   }
 }
 
-window.verExpediente = function () {
+window.verExpediente = async function () {
   if (!matriculaActual) {
     alert("⚠️ Primero busque una matrícula.");
     return;
@@ -584,6 +572,20 @@ window.verExpediente = function () {
 
     const fechaEl = document.getElementById("exp_fechaActualizacion");
     if (fechaEl) fechaEl.textContent = formatearFechaHora(registro.actualizado);
+
+    const docenteEl = document.getElementById("exp_docenteResponsable");
+    if (docenteEl) {
+      docenteEl.textContent = "Cargando...";
+      try {
+        const perfil = await obtenerPerfil(registro.actualizadoPor);
+        docenteEl.textContent = perfil
+          ? `${perfil.nombre || "Docente"}${perfil.correo ? ` (${perfil.correo})` : ""}`
+          : "No identificado";
+      } catch (error) {
+        console.error("Error al consultar al docente responsable:", error);
+        docenteEl.textContent = "No disponible";
+      }
+    }
 
     const listaPrincipalEl = document.getElementById("exp_listaPrincipal");
     if (listaPrincipalEl) {
@@ -797,7 +799,7 @@ window.modificarcampos = async function () {
       }
     });
 
-    await updateDoc(doc(db, "matriculas", matriculaActual.id), datosActualizados);
+    await actualizarMatricula(matriculaActual, datosActualizados);
 
     // Actualizar copia local con los nuevos valores
     matriculaActual = { ...matriculaActual, ...datosActualizados };
@@ -839,7 +841,7 @@ window.eliminarMatricula = async function() {
   }
 
   try {
-    await deleteDoc(doc(db, "matriculas", matriculaActual.id));
+    await eliminarMatriculaSupabase(matriculaActual);
     alert("✅ Matrícula eliminada correctamente.");
     limpiarBusqueda();
   } catch (error) {
@@ -879,13 +881,102 @@ mostrarMensaje("💡 Ingrese el NIE del estudiante para buscar.", "info");
 window.mostrarMatriculas = function () {
   document.getElementById("seccionMatricula").style.display = "block";
   document.getElementById("seccionReportes").style.display = "none";
+  document.getElementById("seccionDocentes").style.display = "none";
 }
 
 window.mostrarReportes = function () {
   document.getElementById("seccionMatricula").style.display = "none";
   document.getElementById("resultadosBusqueda").style.display = "none";
   document.getElementById("seccionReportes").style.display = "block";
+  document.getElementById("seccionDocentes").style.display = "none";
 }
+
+window.mostrarDocentes = async function () {
+  document.getElementById("seccionMatricula").style.display = "none";
+  document.getElementById("seccionReportes").style.display = "none";
+  document.getElementById("resultadosBusqueda").style.display = "none";
+  document.getElementById("seccionDocentes").style.display = "block";
+
+  const mensaje = document.getElementById("mensajeDocentes");
+  const contenedor = document.getElementById("tablaDocentesContenedor");
+  const cuerpo = document.getElementById("cuerpoTablaDocentes");
+  mensaje.textContent = "Cargando docentes...";
+  contenedor.style.display = "none";
+  cuerpo.innerHTML = "";
+
+  try {
+    const docentes = await listarDocentes();
+    if (!docentes.length) {
+      mensaje.textContent = "No hay docentes registrados.";
+      return;
+    }
+
+    docentes.forEach((docente) => {
+      const fila = document.createElement("tr");
+      fila.innerHTML = `
+        <td>${docente.nombre || "-"}</td>
+        <td>${docente.correo || "-"}</td>
+        <td><span class="badge-grado">Docente</span></td>
+        <td>${formatearFechaHora(docente.creado_en)}</td>
+      `;
+      cuerpo.appendChild(fila);
+    });
+
+    mensaje.textContent = `${docentes.length} docente(s) registrado(s).`;
+    contenedor.style.display = "block";
+  } catch (error) {
+    console.error("Error al listar docentes:", error);
+    mensaje.textContent = "No se pudieron cargar los docentes: " + error.message;
+  }
+}
+
+window.abrirNuevoUsuario = function () {
+  const modal = document.getElementById("modalNuevoUsuario");
+  const form = document.getElementById("formNuevoUsuario");
+  const mensaje = document.getElementById("mensajeNuevoUsuario");
+  form?.reset();
+  if (mensaje) mensaje.textContent = "";
+  modal?.classList.add("activo");
+  document.getElementById("nuevoUsuarioNombre")?.focus();
+}
+
+window.cerrarNuevoUsuario = function () {
+  document.getElementById("modalNuevoUsuario")?.classList.remove("activo");
+}
+
+const formNuevoUsuario = document.getElementById("formNuevoUsuario");
+formNuevoUsuario?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!formNuevoUsuario.checkValidity()) {
+    formNuevoUsuario.reportValidity();
+    return;
+  }
+
+  const boton = document.getElementById("btnCrearDocente");
+  const mensaje = document.getElementById("mensajeNuevoUsuario");
+  const datos = new FormData(formNuevoUsuario);
+  boton.disabled = true;
+  mensaje.textContent = "Creando cuenta docente...";
+
+  try {
+    await crearDocente({
+      nombre: String(datos.get("nombre") || "").trim(),
+      correo: String(datos.get("correo") || "").trim().toLowerCase(),
+      contrasena: String(datos.get("contrasena") || ""),
+    });
+    mensaje.textContent = "Docente creado correctamente.";
+    formNuevoUsuario.reset();
+    setTimeout(async () => {
+      window.cerrarNuevoUsuario();
+      await window.mostrarDocentes();
+    }, 900);
+  } catch (error) {
+    console.error("Error al crear docente:", error);
+    mensaje.textContent = "No se pudo crear: " + error.message;
+  } finally {
+    boton.disabled = false;
+  }
+});
 
 /* =========================================================
    REPORTES: BUSCAR CON FILTROS
@@ -909,13 +1000,7 @@ window.buscarReportes = async function () {
   cuerpoTabla.innerHTML = "";
 
   try {
-    const matriculasRef = collection(db, "matriculas");
-    const snapshot = await getDocs(matriculasRef);
-
-    let resultados = [];
-    snapshot.forEach((docSnap) => {
-      resultados.push({ id: docSnap.id, ...docSnap.data() });
-    });
+    let resultados = await listarMatriculas();
 
     if (nie) {
       resultados = resultados.filter(r => (r.nie || "").includes(nie));

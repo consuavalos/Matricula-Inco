@@ -194,6 +194,60 @@ body {
 .admin-main {
   flex: 1;
   padding: 24px;
+  min-width: 0;
+}
+
+.tabla-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.btn-nuevo-usuario {
+  margin-top: 16px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--verde-oscuro);
+  color: var(--blanco);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-nuevo-usuario:hover {
+  background: #0b472e;
+}
+
+.btn-nuevo-usuario:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.modal-usuario {
+  max-width: 520px;
+}
+
+.modal-usuario .campo {
+  margin-bottom: 16px;
+}
+
+.modal-usuario .campo input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #cbd5cc;
+  border-radius: 9px;
+}
+
+.modal-usuario .campo small {
+  display: block;
+  margin-top: 6px;
+  color: #617067;
+}
+
+.acciones-usuario {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
 }
 
 /* =========================================================
