@@ -22,6 +22,12 @@ const avisoSobreedad = document.getElementById("avisoSobreedad");
 
 const grado = document.getElementById("grado");
 const enfermedad = document.getElementById("enfermedad");
+const conQuienVive = document.getElementById("conQuienVive");
+const conQuienViveOtro = document.getElementById("conQuienViveOtro");
+const campoConQuienViveOtro = document.getElementById("campoConQuienViveOtro");
+const avisoSinPadres = document.getElementById("avisoSinPadres");
+const bloqueDatosMadre = document.getElementById("bloqueDatosMadre");
+const bloqueDatosPadre = document.getElementById("bloqueDatosPadre");
 
 const btnAnterior = document.getElementById("btnAnterior");
 const btnSiguiente = document.getElementById("btnSiguiente");
@@ -46,6 +52,7 @@ const mensajesPersonalizados = {
   distanciaKm: "Ingrese la distancia en kilómetros hasta la institución.",
   zonaResidencia: "Seleccione la zona de residencia.",
   conQuienVive: "Seleccione con quién vive el estudiante.",
+  conQuienViveOtro: "Especifique con quién vive el estudiante.",
   direccionResidencia: "Ingrese la dirección de residencia.",
   primerApellido: "Ingrese el primer apellido (solo letras, máximo 10 caracteres).",
   segundoApellido: "Ingrese el segundo apellido (solo letras, máximo 10 caracteres).",
@@ -74,7 +81,7 @@ const mensajesPersonalizados = {
   cualEnfermedad: "Especifique la enfermedad.",
   medicamento: "Especifique el medicamento que utiliza.",
   responsable: "Ingrese el nombre del responsable (solo letras).",
-  parentesco: "Ingrese el parentesco (solo letras).",
+  parentesco: "Seleccione el parentesco del responsable.",
   duiResponsable: "Formato requerido: 00000000-0.",
   telefonoResponsable: "Ingrese exactamente 8 números.",
   whatsappResponsable: "Ingrese exactamente 8 números.",
@@ -557,6 +564,97 @@ function configurarTallas() {
   });
 }
 
+/* Avisa cuando el estudiante cursará nuevamente el mismo año. */
+function configurarUltimoAnioAprobado() {
+  const ultimoAnio = document.getElementById("ultimoAnioAprobado");
+  const ayuda = document.getElementById("ayudaUltimoAnio");
+  if (!grado || !ultimoAnio) return;
+
+  const mostrarAvisoRepeticion = () => {
+    if (!ayuda) return;
+    ayuda.classList.remove("advertencia-repeticion", "anio-correcto");
+
+    if (!grado.value || !ultimoAnio.value) {
+      ayuda.textContent = "";
+      return;
+    }
+
+    const anioAnteriorEsperado = {
+      "Primer Año": "Noveno Grado",
+      "Segundo Año": "Primer Año",
+      "Tercer Año": "Segundo Año"
+    }[grado.value];
+
+    if (ultimoAnio.value === anioAnteriorEsperado) {
+      ayuda.textContent = `✓ Año anterior correcto: ${ultimoAnio.value}.`;
+      ayuda.classList.add("anio-correcto");
+    } else {
+      ayuda.textContent = ultimoAnio.value === grado.value
+        ? `⚠️ El estudiante está repitiendo ${grado.value}.`
+        : `⚠️ Posible repetición: para cursar ${grado.value}, el año anterior esperado es ${anioAnteriorEsperado}.`;
+      ayuda.classList.add("advertencia-repeticion");
+    }
+  };
+
+  grado.addEventListener("change", mostrarAvisoRepeticion);
+  ultimoAnio.addEventListener("change", mostrarAvisoRepeticion);
+  mostrarAvisoRepeticion();
+}
+
+/* Si el responsable es mamá o papá, replica sus datos en el bloque familiar. */
+function configurarAutollenadoResponsable() {
+  const parentesco = document.getElementById("parentesco");
+  const responsable = document.getElementById("responsable");
+  const duiResponsable = document.getElementById("duiResponsable");
+  const telefonoResponsable = document.getElementById("telefonoResponsable");
+  if (!parentesco || !responsable) return;
+
+  const idsAutollenables = [
+    "madreNombre", "madreDui", "madreCelular",
+    "padreNombre", "padreDui", "padreCelular"
+  ];
+
+  // Una edición manual deja de considerarse una copia automática del responsable.
+  idsAutollenables.forEach((id) => {
+    document.getElementById(id)?.addEventListener("input", (evento) => {
+      delete evento.currentTarget.dataset.autollenadoResponsable;
+    });
+  });
+
+  const sincronizar = () => {
+    // Retira solo copias automáticas anteriores y conserva los datos escritos manualmente.
+    idsAutollenables.forEach((id) => {
+      const campo = document.getElementById(id);
+      if (campo?.dataset.autollenadoResponsable === "true") {
+        campo.value = "";
+        delete campo.dataset.autollenadoResponsable;
+        limpiarError(campo);
+      }
+    });
+
+    const prefijo = parentesco.value === "Mamá" ? "madre" : parentesco.value === "Papá" ? "padre" : "";
+    if (!prefijo) return;
+    const asignaciones = [
+      [`${prefijo}Nombre`, responsable.value],
+      [`${prefijo}Dui`, duiResponsable?.value || ""],
+      [`${prefijo}Celular`, telefonoResponsable?.value || ""]
+    ];
+    asignaciones.forEach(([id, valor]) => {
+      const campo = document.getElementById(id);
+      if (campo) {
+        campo.value = valor;
+        campo.dataset.autollenadoResponsable = "true";
+        validarCampo(campo);
+      }
+    });
+  };
+
+  [parentesco, responsable, duiResponsable, telefonoResponsable]
+    .filter(Boolean)
+    .forEach(campo => campo.addEventListener("input", sincronizar));
+  parentesco.addEventListener("change", sincronizar);
+}
+
 /* =========================================================
    INICIALIZACIÓN
 ========================================================= */
@@ -580,6 +678,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     configurarFechaNacimiento();
     configurarCamposHermanos();
     configurarTallas();
+    configurarUltimoAnioAprobado();
+    configurarAutollenadoResponsable();
+    configurarConQuienVive();
+    configurarTema();
 
     // ===== EVENTOS DE NAVEGACIÓN =====
     if (btnSiguiente) {
@@ -599,8 +701,10 @@ window.addEventListener("DOMContentLoaded", async () => {
           }
         }
 
-        if (pasoActual < TOTAL_PASOS) {
-          mostrarPaso(pasoActual + 1);
+        const secuencia = obtenerSecuenciaPasos();
+        const posicion = secuencia.indexOf(pasoActual);
+        if (posicion < secuencia.length - 1) {
+          mostrarPaso(secuencia[posicion + 1]);
           window.scrollTo({ top: 0, behavior: "smooth" });
         }
       });
@@ -608,8 +712,10 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     if (btnAnterior) {
       btnAnterior.addEventListener("click", () => {
-        if (pasoActual > 1) {
-          mostrarPaso(pasoActual - 1);
+        const secuencia = obtenerSecuenciaPasos();
+        const posicion = secuencia.indexOf(pasoActual);
+        if (posicion > 0) {
+          mostrarPaso(secuencia[posicion - 1]);
           window.scrollTo({ top: 0, behavior: "smooth" });
         }
       });
@@ -643,7 +749,7 @@ if (form) {
     let formularioValido = true;
     let primerPasoInvalido = null;
 
-    for (let i = 1; i <= TOTAL_PASOS; i++) {
+    for (const i of obtenerSecuenciaPasos()) {
       const ok = validarPaso(i);
       if (!ok) {
         formularioValido = false;
@@ -698,6 +804,11 @@ if (form) {
       }
     });
 
+    // La base de datos conserva la respuesta escrita cuando se elige "Otros".
+    if (data.conQuienVive === "Otros" && data.conQuienViveOtro) {
+      data.conQuienVive = `Otros: ${data.conQuienViveOtro}`;
+    }
+
     // Agregar la foto en Base64 si existe
     const fotoBase64Input = document.getElementById("fotoBase64");
     if (fotoBase64Input && fotoBase64Input.value) {
@@ -733,6 +844,7 @@ if (form) {
       // Resetear formulario después de 3 segundos
       setTimeout(async () => {
         form.reset();
+        conQuienVive?.dispatchEvent(new Event("change"));
         if (vistaPrevia) vistaPrevia.innerHTML = "";
         fotoInput?.closest(".foto-label")?.classList.remove("con-foto");
         if (edad) edad.value = "";
@@ -893,6 +1005,8 @@ function configurarFechaNacimiento() {
   const hoyLocal = new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000)
     .toISOString().slice(0, 10);
   fechaNacimiento.setAttribute("max", hoyLocal);
+  const fechaCorteEdad = document.getElementById("fechaCorteEdad");
+  if (fechaCorteEdad) fechaCorteEdad.value = hoyLocal;
 
   fechaNacimiento.addEventListener("change", function() {
     calcularEdad();
@@ -918,7 +1032,7 @@ function calcularEdad() {
   }
 
   const nacimiento = new Date(fechaNacimiento.value + "T00:00:00");
-  const fechaCorte = new Date("2027-01-01T00:00:00");
+  const fechaCorte = new Date();
 
   let anios = fechaCorte.getFullYear() - nacimiento.getFullYear();
   const mes = fechaCorte.getMonth() - nacimiento.getMonth();
@@ -938,7 +1052,7 @@ function validarSobreedad() {
   if (!edad || !grado) return;
 
   const reglas = {
-    "Primer Año": { minima: 14, maxima: 17 },
+    "Primer Año": { minima: 14, maxima: 18 },
     "Segundo Año": { minima: 15, maxima: 20 },
     "Tercer Año": { minima: 17, maxima: 20 },
   };
@@ -961,20 +1075,27 @@ function validarSobreedad() {
   }
 
   if (edadActual < regla.minima) {
-    mensaje.innerHTML = `El estudiante tendrá <b>${edadActual} años</b> al 1 de enero de 2027. ` +
+    mensaje.innerHTML = `El estudiante tiene <b>${edadActual} años</b>. ` +
       `${grado.value} requiere una edad mínima de <b>${regla.minima} años</b>.`;
     mensaje.classList.add("mostrar");
     if (estadoRevision) estadoRevision.value = "No permitido por edad mínima";
     actualizarBloqueoEdad(true);
   } else if (edadActual > regla.maxima && grado.value === "Primer Año") {
-    mensaje.innerHTML = `El estudiante tendrá <b>${edadActual} años</b> al 1 de enero de 2027. ` +
+    mensaje.innerHTML = `El estudiante tiene <b>${edadActual} años</b>. ` +
       `Primer Año permite una edad máxima de <b>${regla.maxima} años</b>.`;
     mensaje.classList.add("mostrar");
     if (estadoRevision) estadoRevision.value = "No permitido por edad máxima";
     actualizarBloqueoEdad(true);
+  } else if (grado.value === "Primer Año" && edadActual === 18) {
+    if (avisoSobreedad) {
+      avisoSobreedad.innerHTML = `⚠️ Precaución: el estudiante tiene <b>18 años</b>. Puede continuar con la matrícula, pero el caso quedará <b>pendiente de revisión administrativa</b>.`;
+      avisoSobreedad.classList.add("mostrar", "revision");
+    }
+    if (estadoRevision) estadoRevision.value = "Pendiente";
+    actualizarBloqueoEdad(false);
   } else if (edadActual > regla.maxima) {
     if (avisoSobreedad) {
-      avisoSobreedad.innerHTML = `El estudiante tendrá <b>${edadActual} años</b> al 1 de enero de 2027 y ` +
+      avisoSobreedad.innerHTML = `El estudiante tiene <b>${edadActual} años</b> y ` +
         `supera el máximo regular de <b>${regla.maxima} años</b> para ${grado.value}. ` +
         `Puede continuar, pero la solicitud quedará <b>pendiente de revisión administrativa</b>.`;
       avisoSobreedad.classList.add("mostrar", "revision");
@@ -1014,12 +1135,14 @@ function mostrarPaso(paso) {
     btnAnterior.style.display = paso === 1 ? "none" : "inline-block";
   }
 
-  if (btnSiguiente) {
-    btnSiguiente.style.display = paso === TOTAL_PASOS ? "none" : "inline-block";
-  }
+  const secuencia = obtenerSecuenciaPasos();
+  const posicion = secuencia.indexOf(paso);
+  const esUltimoPaso = posicion === secuencia.length - 1;
+
+  if (btnSiguiente) btnSiguiente.style.display = esUltimoPaso ? "none" : "inline-block";
 
   if (btnGuardar) {
-    btnGuardar.style.display = paso === TOTAL_PASOS ? "inline-block" : "none";
+    btnGuardar.style.display = esUltimoPaso ? "inline-block" : "none";
   }
 
   pasoActual = paso;
@@ -1034,12 +1157,73 @@ function actualizarBarraProgreso(paso) {
   const porcentaje = document.getElementById("progresoPorcentaje");
   const relleno = document.getElementById("progresoRelleno");
 
-  if (!texto || !porcentaje || !relleno || !TOTAL_PASOS) return;
+  const secuencia = obtenerSecuenciaPasos();
+  const pasoVisible = secuencia.indexOf(paso) + 1;
+  const totalVisible = secuencia.length;
+  if (!texto || !porcentaje || !relleno || !totalVisible) return;
 
-  const pct = Math.round((paso / TOTAL_PASOS) * 100);
-  texto.textContent = `Paso ${paso} de ${TOTAL_PASOS}`;
+  const pct = Math.round((pasoVisible / totalVisible) * 100);
+  texto.textContent = `Paso ${pasoVisible} de ${totalVisible}`;
   porcentaje.textContent = `${pct}%`;
   relleno.style.width = `${pct}%`;
+}
+
+function obtenerSecuenciaPasos() {
+  return [1, 2, 3, 4, 5, 6];
+}
+
+function configurarConQuienVive() {
+  if (!conQuienVive) return;
+  const actualizar = () => {
+    const esOtro = conQuienVive.value === "Otros";
+    if (campoConQuienViveOtro) campoConQuienViveOtro.hidden = !esOtro;
+    if (conQuienViveOtro) {
+      conQuienViveOtro.required = esOtro;
+      conQuienViveOtro.disabled = !esOtro;
+      if (!esOtro) {
+        conQuienViveOtro.value = "";
+        limpiarError(conQuienViveOtro);
+      }
+    }
+    const valor = conQuienVive.value;
+    const mostrarMadre = valor === "Madre" || valor === "Ambos";
+    const mostrarPadre = valor === "Padre" || valor === "Ambos";
+    const omitirPadres = Boolean(valor) && !mostrarMadre && !mostrarPadre;
+
+    actualizarBloquePadre(bloqueDatosMadre, mostrarMadre);
+    actualizarBloquePadre(bloqueDatosPadre, mostrarPadre);
+    if (avisoSinPadres) avisoSinPadres.hidden = !omitirPadres;
+    actualizarBarraProgreso(pasoActual);
+  };
+  conQuienVive.addEventListener("change", actualizar);
+  actualizar();
+}
+
+function actualizarBloquePadre(bloque, mostrar) {
+  if (!bloque) return;
+  bloque.hidden = !mostrar;
+  bloque.querySelectorAll("input, select, textarea").forEach((campo) => {
+    campo.disabled = !mostrar;
+    if (!mostrar) limpiarError(campo);
+  });
+}
+
+function configurarTema() {
+  const boton = document.getElementById("btnTema");
+  if (!boton) return;
+  const aplicar = (oscuro) => {
+    document.body.classList.toggle("tema-oscuro", oscuro);
+    boton.setAttribute("aria-pressed", String(oscuro));
+    boton.setAttribute("aria-label", oscuro ? "Cambiar a tema claro" : "Cambiar a tema oscuro");
+    boton.querySelector(".icono-tema").textContent = oscuro ? "☀️" : "🌙";
+    boton.querySelector(".texto-tema").textContent = oscuro ? "Tema claro" : "Tema oscuro";
+  };
+  aplicar(localStorage.getItem("temaMatricula") === "oscuro");
+  boton.addEventListener("click", () => {
+    const oscuro = !document.body.classList.contains("tema-oscuro");
+    aplicar(oscuro);
+    localStorage.setItem("temaMatricula", oscuro ? "oscuro" : "claro");
+  });
 }
 
 /* ============================================================
