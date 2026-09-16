@@ -108,7 +108,7 @@
   <div class="campo">
     <label for="grado">Año / Grado que cursará</label>
     <select id="grado" name="grado" required>
-      <option value="">Seleccione</option>
+      <option value="">¿Qué año o grado cursará?</option>
       <option value="Primer Año">Primer Año</option>
       <option value="Segundo Año">Segundo Año</option>
       <option value="Tercer Año">Tercer Año</option>
@@ -124,7 +124,7 @@
           <div class="campo">
             <label for="sexo">Sexo</label>
             <select id="sexo" name="sexo" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Cuál es su sexo?</option>
               <option>Femenino</option>
               <option>Masculino</option>
             </select>
@@ -186,7 +186,7 @@
           <div class="campo">
             <label for="especialidad">Especialidad / Bachillerato</label>
             <select id="especialidad" name="especialidad" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Qué especialidad o bachillerato cursará?</option>
               <option value="Bachillerato General">Bachillerato General</option>
               <option value="Administrativo Contable">Administrativo Contable</option>
               <option value="Servicios Turísticos">Servicios Turísticos</option>
@@ -196,7 +196,7 @@
           <div class="campo">
             <label for="ultimoAnioAprobado">Último año aprobado</label>
             <select id="ultimoAnioAprobado" name="ultimoAnioAprobado" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Cuál fue el último año aprobado?</option>
               <option value="Noveno Grado">Noveno Grado</option>
               <option value="Primer Año">Primer Año</option>
               <option value="Segundo Año">Segundo Año</option>
@@ -211,7 +211,7 @@
           <div class="campo">
             <label for="hermanosCentroeducativo">¿Tiene hermanos en este Centro Educativo?</label>
             <select id="hermanosCentroeducativo" name="hermanosCentroeducativo" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Tiene hermanos en este Centro Educativo?</option>
               <option value="Sí">Sí</option>
               <option value="No">No</option>
             </select>
@@ -240,7 +240,7 @@
           <div class="campo">
             <label for="computadoraMineducyt">¿Posee computadora MINEDUCYT?</label>
             <select id="computadoraMineducyt" name="computadoraMineducyt" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Posee computadora MINEDUCYT?</option>
               <option value="Sí">Sí</option>
               <option value="No">No</option>
             </select>
@@ -249,7 +249,7 @@
           <div class="campo">
             <label for="internet">¿Posee acceso a internet?</label>
             <select id="internet" name="internet" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Posee acceso a internet?</option>
               <option value="Sí">Sí</option>
               <option value="No">No</option>
             </select>
@@ -291,7 +291,7 @@
           <div class="campo">
             <label for="tipoTransporte">Tipo de transporte que utiliza</label>
             <select id="tipoTransporte" name="tipoTransporte" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Qué transporte utiliza?</option>
               <option value="Peatonal">Peatonal</option>
               <option value="Público">Público</option>
               <option value="Privado">Privado</option>
@@ -308,7 +308,7 @@
           <div class="campo">
             <label for="zonaResidencia">Zona de residencia</label>
             <select id="zonaResidencia" name="zonaResidencia" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Cuál es su zona de residencia?</option>
               <option value="Urbana">Urbana</option>
               <option value="Rural">Rural</option>
             </select>
@@ -317,7 +317,7 @@
           <div class="campo">
             <label for="conQuienVive">¿Con quién vive?</label>
             <select id="conQuienVive" name="conQuienVive" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Con quién vive?</option>
               <option value="Madre">Madre</option>
               <option value="Padre">Padre</option>
               <option value="Ambos">Ambos</option>
@@ -344,7 +344,7 @@
       </section>
 
       <!-- ============================================================ -->
-      <!-- PASO 4 – SALUD  +  Responsable                                 -->
+      <!-- PASO 4 – SALUD  +  ENCARGADO                                 -->
       <!-- ============================================================ -->
       <section class="seccion form-step" data-step="4">
         <h2>Salud</h2>
@@ -352,7 +352,7 @@
           <div class="campo">
             <label for="enfermedad">¿Padece alguna enfermedad?</label>
             <select id="enfermedad" name="enfermedad" required>
-              <option value="">Seleccione</option>
+              <option value="">¿Padece alguna enfermedad?</option>
               <option value="Sí">Sí</option>
               <option value="No">No</option>
             </select>
@@ -372,7 +372,7 @@
           </div>
         </div>
 
-              <h2>Responsable</h2>
+              <h2>Encargado</h2>
         <div class="grid-2">
           <div class="campo">
             <label for="responsable">Nombre del responsable</label>
@@ -385,7 +385,7 @@
 <div class="campo">
     <label for="parentesco">Parentesco</label>
     <select id="parentesco" name="parentesco" required>
-        <option value="">Seleccione</option>
+        <option value="">¿Cuál es el parentesco del responsable?</option>
         <option value="Mamá">Mamá</option>
         <option value="Papá">Papá</option>
         <option value="Tío">Tío</option>
@@ -437,6 +437,11 @@
       <!-- PASO 5 –              MADRE + PADRE                          -->
       <!-- ============================================================ -->
       <section class="seccion form-step" data-step="5">
+        <div id="avisoSinPadres" class="aviso-sin-padres" role="status" aria-live="polite" hidden>
+          Ya que no vive con los padres no se le pedirá información acerca de ellos.
+        </div>
+
+        <div id="bloqueDatosMadre">
         <h2>Datos de la Madre</h2>
 
         <div class="grid-2">
@@ -484,7 +489,9 @@
   />
 </div>
         </div>
+        </div>
 
+        <div id="bloqueDatosPadre">
         <h2>Datos del Padre</h2>
         <div class="grid-2">
           <div class="campo campo-full">
@@ -531,6 +538,7 @@
   />
 </div>
         </div>
+        </div>
       </section>
 
       <!-- ============================================================ -->
@@ -538,10 +546,6 @@
       <!-- ============================================================ -->
       <section class="seccion form-step" data-step="6">
         <h2>Datos Personales</h2>
-
-        <div id="avisoSinPadres" class="aviso-sin-padres" role="status" aria-live="polite" hidden>
-          El estudiante no vive con sus padres; por ello no se solicitará información de ellos.
-        </div>
 
         <div class="campo" style="margin-bottom:1rem;">
           <label for="numeroFicha">Número de ficha</label>
