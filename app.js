@@ -1,5 +1,3 @@
-import { supabase } from "./supabase-config.js";
-
 document.addEventListener('DOMContentLoaded', function () {
 
     // =====================================================
@@ -202,6 +200,10 @@ document.addEventListener('DOMContentLoaded', function () {
             mensajeAdmin.textContent = 'Verificando credenciales...';
 
             try {
+                // La pantalla principal debe seguir funcionando aunque la red o
+                // el CDN de Supabase no estén disponibles. Por eso cargamos el
+                // cliente únicamente al intentar iniciar sesión.
+                const { supabase } = await import('./supabase-config.js');
                 const { data: authData, error: authError } =
                     await supabase.auth.signInWithPassword({ email: correo, password: clave });
 
@@ -224,6 +226,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (perfil.rol === 'administrador') {
                     window.location.href = 'Administrador/admin.html';
+                } else if (perfil.rol === 'coordinador') {
+                    window.location.href = 'Coordinador/coordinador.html';
                 } else if (perfil.rol === 'docente') {
                     window.location.href = 'Docente/docente.html';
                 } else {

@@ -5,6 +5,12 @@ import {
 } from "../supabase-data.js";
 const accesoDocente = await protegerRuta("docente");
 
+if (accesoDocente) {
+  const identificador = document.getElementById("identificadorDocente");
+  const nombre = sessionStorage.getItem("nombreUsuario") || "Docente";
+  if (identificador) identificador.textContent = `Docente responsable: ${nombre}`;
+}
+
 /* =========================================================
    INDICACIONES / DOCUMENTOS REQUERIDOS POR AÑO
    -----------------------------------------------------------
@@ -314,6 +320,8 @@ window.guardarDocumentos = async function () {
     general: leerGrupo("general"),
     observaciones: observacionesDocumentos.value.trim(),
     actualizado: new Date().toISOString(),
+    revisadoPorNombre: sessionStorage.getItem("nombreUsuario") || "Docente",
+    revisadoPorCorreo: sessionStorage.getItem("correoUsuario") || "",
   };
 
   try {

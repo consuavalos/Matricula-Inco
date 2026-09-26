@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coordinación - INCO</title>
+  <link rel="stylesheet" href="coordinador.css">
+</head>
+<body>
+  <header class="barra no-imprimir">
+    <div>
+      <strong>Instituto Nacional de Comercio</strong>
+      <span>Panel de Coordinación Disciplinaria y Convivencia</span>
+    </div>
+    <p id="identificadorCoordinador" class="identificador-panel"></p>
+    <div class="acciones">
+      <button type="button" class="btn-imprimir" onclick="imprimirActa()">🖨️ Imprimir acta</button>
+      <button type="button" class="btn-salir" onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="vista-acta">
+    <form id="actaCondicionamiento" class="hoja-carta">
+      <header class="encabezado-acta">
+        <img src="../img/Escudo-inc.png" alt="Escudo del Instituto Nacional de Comercio">
+        <div>
+          <h1>Instituto Nacional de Comercio</h1>
+          <h2>ACTA DE CONDICIONAMIENTO 202<input class="anio" aria-label="Año" maxlength="1">____</h2>
+        </div>
+      </header>
+
+      <p class="motivos">
+        Nuevo Ingreso <input> &nbsp; Repitencia <input> &nbsp; Rendimiento Académico <input>
+        &nbsp; Conducta <input> &nbsp; Sobre edad <input>
+      </p>
+
+      <p>
+        Reunidos en la oficina administrativa que ocupa la Coordinación Disciplinaria y de Convivencia Escolar del Instituto
+        Nacional de Comercio de San Salvador, a los <input class="linea-corta"> días del mes de <input class="linea-media">
+        del año <input class="linea-corta">, por lo que YO <input class="linea-larga"> responsable del estudiante con número de
+        Documento Único de Identidad (DUI) <input class="linea-media">, siendo su Padre <input class="linea-corta"> Madre
+        <input class="linea-corta"> Encargado/a <input class="linea-media"> (si no es padre ni madre favor indicar el parentesco con el estudiante)
+        <input class="linea-media"> del/la alumno/a: <input class="linea-larga">, del Bachillerato <input class="linea-media">
+        Sección <input class="linea-corta">;
+        <strong>ACEPTO EL CONDICIONAMIENTO Y ME COMPROMETO JUNTO A MI HIJO/A</strong> a cumplir lo requerido en la presente acta,
+        lo cual consiste en que si mi hijo/a <strong>REPRUEBA TRES O MÁS MATERIAS O PRESENTA FALTAS DISCIPLINARIAS</strong>
+        contempladas en el <strong>MANUAL DE CONVIVENCIA</strong>, inmediatamente se le comunicará a la madre, padre y/o encargado/a,
+        por lo que me comprometo a:
+      </p>
+
+      <ol>
+        <li>Asistir puntualmente a las reuniones de madres y padres.</li>
+        <li>Vigilar la conducta y rendimiento académico.</li>
+        <li>Estar en comunicación constante con los coordinadores y con la subdirección cuando lo amerite.</li>
+        <li>Revisar diariamente sus tareas.</li>
+        <li>Constatar que asista puntualmente a clases.</li>
+        <li>Proporcionar todo lo necesario para su estudio.</li>
+        <li>Revisar constantemente que ande adecuadamente su uniforme, pantalón normal en los caballeros no punta de yuca (que no mida más ni menos de 22 centímetros), velar porque las faldas y pantalones no sean rinconeros/as, faldas debajo de la rodilla, camisa blanca por dentro de la falda o pantalón, zapatos negros de lustrar bien limpios; en el caso de las señoritas la falda debe ser a la cintura no apretada ni ajustada, las alumnas no pueden presentarse con maquillaje ni los jóvenes con barba o cejas depiladas.</li>
+        <li>Para los estudiantes condicionados por conducta, se advierte que a la menor falta leve que cometa será convocado para apertura de expediente respectivo y se sancionará de forma más severa debido a que ya se tomó los compromisos adquiridos al momento de ser condicionado.</li>
+        <li>Leer detenidamente todos los artículos citados en el manual de convivencia y respetarlo según lo indica.</li>
+      </ol>
+
+      <p class="cierre">Y no habiendo más que citar en dichos compromisos, firmamos a continuación como autoridades disciplinarias y personas comprometidas a cumplir con lo antes expuesto para mejorar dichas conductas.</p>
+
+      <section class="firmas-coordinacion">
+        <div>Coordinador Disciplinario y de Convivencia<br>Matutino</div>
+        <div>Coordinador Disciplinario y de Convivencia<br>Vespertino</div>
+      </section>
+
+      <section class="firmas-finales">
+        <div><strong>ENCARGADO</strong><br><br>F: <input class="firma"><br>DUI: <input class="firma"></div>
+        <div><strong>ESTUDIANTE</strong><br><br>F: <input class="firma"><br>DUI: <input class="firma"></div>
+      </section>
+    </form>
+  </main>
+  <script type="module" src="coordinador.js"></script>
+</body>
+</html>

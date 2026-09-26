@@ -10,6 +10,12 @@ import {
 } from "../supabase-data.js";
 const accesoAdministrador = await protegerRuta("administrador");
 
+if (accesoAdministrador) {
+  const identificador = document.getElementById("identificadorAdministrador");
+  const nombre = sessionStorage.getItem("nombreUsuario") || "Administrador";
+  if (identificador) identificador.textContent = `Administrador responsable: ${nombre}`;
+}
+
 /* =========================================================
    INDICACIONES / DOCUMENTOS REQUERIDOS POR AÑO
    -----------------------------------------------------------
@@ -130,6 +136,13 @@ function mostrarResultados(data) {
   if (resultadosSection) {
     resultadosSection.style.display = "block";
     resultadosSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  const alertasAcademicas = document.getElementById("alertasAcademicas");
+  if (alertasAcademicas) {
+    const alerta = obtenerAlertaAcademica(data);
+    alertasAcademicas.innerHTML = alerta.html === "—" ? "" : alerta.html;
+    alertasAcademicas.hidden = alerta.html === "—";
   }
 
   const campos = {
@@ -580,7 +593,9 @@ window.verExpediente = async function () {
         const perfil = await obtenerPerfil(registro.actualizadoPor);
         docenteEl.textContent = perfil
           ? `${perfil.nombre || "Docente"}${perfil.correo ? ` (${perfil.correo})` : ""}`
-          : "No identificado";
+          : (registro.revisadoPorNombre
+            ? `${registro.revisadoPorNombre}${registro.revisadoPorCorreo ? ` (${registro.revisadoPorCorreo})` : ""}`
+            : "No identificado");
       } catch (error) {
         console.error("Error al consultar al docente responsable:", error);
         docenteEl.textContent = "No disponible";
@@ -1023,13 +1038,16 @@ window.buscarReportes = async function () {
 
     resultados.forEach((r) => {
       const nombreCompleto = `${r.primerNombre || ""} ${r.segundoNombre || ""} ${r.primerApellido || ""} ${r.segundoApellido || ""}`.trim();
+      const alerta = obtenerAlertaAcademica(r);
       const fila = document.createElement("tr");
+      if (alerta.claseFila) fila.classList.add(alerta.claseFila);
       fila.innerHTML = `
         <td>${r.numeroFicha || "-"}</td>
         <td>${r.nie || "-"}</td>
         <td>${nombreCompleto || "-"}</td>
         <td><span class="badge-grado">${r.grado || "-"}</span></td>
         <td><span class="badge-especialidad">${r.especialidad || "-"}</span></td>
+        <td>${alerta.html}</td>
         <td><button class="btn-ver-fila" onclick="verDesdeReporte('${r.nie || ""}')">Ver</button></td>
       `;
       cuerpoTabla.appendChild(fila);
@@ -1067,3 +1085,24 @@ window.limpiarReportes = function () {
   document.getElementById("mensajeReportes").textContent = "";
   document.getElementById("tablaReportesContenedor").style.display = "none";
 };
+
+/* Usa las mismas reglas del formulario de nuevo ingreso para avisar al administrador. */
+function obtenerAlertaAcademica(matricula) {
+  const grado = matricula.grado || "";
+  const ultimoAnio = matricula.ultimoAnioAprobado || "";
+  const edad = Number.parseInt(matricula.edad, 10);
+  const maximaPorGrado = { "Primer Año": 18, "Segundo Año": 20, "Tercer Año": 20 };
+  const esSobreedad = Number.isFinite(edad) && (
+    (grado === "Primer Año" && edad >= maximaPorGrado[grado]) ||
+    (grado !== "Primer Año" && edad > maximaPorGrado[grado])
+  );
+
+  const esRepitiente = grado && ultimoAnio === grado;
+  const alertas = [];
+  if (esRepitiente) alertas.push('<span class="badge-alerta badge-repitiente">Repitiendo año</span>');
+  if (esSobreedad) alertas.push('<span class="badge-alerta badge-sobreedad">Sobreedad</span>');
+  return {
+    claseFila: esSobreedad ? "fila-sobreedad" : (esRepitiente ? "fila-repitiente" : ""),
+    html: alertas.length ? alertas.join(" ") : "—"
+  };
+}

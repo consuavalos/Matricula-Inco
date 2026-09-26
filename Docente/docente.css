@@ -150,32 +150,49 @@ body {
 /* ===== CABECERA ===== */
 .admin-header {
   position: relative;
-  background: var(--blanco);
-  border-radius: 20px;
-  padding: 22px 26px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  background: linear-gradient(135deg, #eef8ef 0%, #f7f0c9 65%, #fbe4d8 100%);
+  border-radius: 22px;
+  padding: 28px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
   margin-bottom: 22px;
-  border: 1px solid #edf0e7;
+  border: 1px solid #e5dbab;
   overflow: hidden;
 }
 
-.admin-header::after {
+.admin-header::before {
   content: "";
   position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 5px;
-  background: linear-gradient(90deg, var(--verde-medio), var(--amarillo-vivo), var(--rojo-acento));
+  inset: 0;
+  background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%);
+  pointer-events: none;
 }
 
 .admin-header h1 {
+  position: relative;
   font-size: 2rem;
   color: var(--verde-oscuro);
   margin-bottom: 6px;
 }
 
 .admin-header p {
+  position: relative;
   font-size: 1rem;
   color: #56725e;
+}
+
+.admin-header .identificador-docente {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  z-index: 1;
+  margin: 0;
+  padding: 11px 17px;
+  border-radius: 999px;
+  background: #fffdf7;
+  border: 2px solid var(--verde-medio);
+  color: var(--verde-oscuro);
+  font-size: 1.12rem;
+  font-weight: 700;
 }
 
 /* ===== TARJETA DE BÚSQUEDA ===== */
@@ -490,7 +507,21 @@ body {
     font-size: 1.6rem;
   }
 
+  .admin-header .identificador-docente {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-top: 14px;
+    font-size: 1rem;
+  }
+
+
   .checklist-item {
     grid-template-columns: 1fr;
   }
+}
+
+.btn-Modificar {
+  background: linear-gradient(135deg, #caa12b, #a97812);
+  color: #ffffff !important;
 }

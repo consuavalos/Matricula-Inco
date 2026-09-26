@@ -10,7 +10,7 @@ async function protegerRuta(rolRequerido) {
 
   const { data: perfil, error: perfilError } = await supabase
     .from("perfiles")
-    .select("nombre, rol")
+    .select("nombre, correo, rol")
     .eq("id", session.user.id)
     .single();
 
@@ -21,6 +21,7 @@ async function protegerRuta(rolRequerido) {
 
   sessionStorage.setItem("rolUsuario", perfil.rol);
   sessionStorage.setItem("nombreUsuario", perfil.nombre || session.user.email || "");
+  sessionStorage.setItem("correoUsuario", perfil.correo || session.user.email || "");
   return true;
 }
 
@@ -28,6 +29,7 @@ async function cerrarSesionSupabase() {
   await supabase.auth.signOut();
   sessionStorage.removeItem("rolUsuario");
   sessionStorage.removeItem("nombreUsuario");
+  sessionStorage.removeItem("correoUsuario");
   window.location.replace("../index.html");
 }
 

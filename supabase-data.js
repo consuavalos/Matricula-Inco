@@ -184,10 +184,31 @@ async function listarDocentes() {
 }
 
 async function crearDocente({ nombre, correo, contrasena }) {
+  // La función valida el rol del usuario que la invoca. Enviamos de forma
+  // explícita la sesión actual para que Supabase identifique al administrador
+  // correcto al crear una cuenta nueva.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("La sesión de administrador expiró. Cierre sesión e ingrese nuevamente.");
+  }
+
   const { data, error } = await supabase.functions.invoke("crear-docente", {
     body: { nombre, correo, contrasena },
+    headers: { Authorization: `Bearer ${session.access_token}` },
   });
-  if (error) throw error;
+  if (error) {
+    // FunctionsHttpError solo muestra un texto genérico. Leemos la respuesta
+    // de la función para que el administrador vea la causa real.
+    let detalle = "";
+    try {
+      const respuesta = error.context;
+      const cuerpo = respuesta ? await respuesta.clone().json() : null;
+      detalle = cuerpo?.error || "";
+    } catch {
+      // Si la respuesta no trae JSON, se conserva el mensaje original.
+    }
+    throw new Error(detalle || error.message || "No se pudo crear el docente.");
+  }
   if (!data?.ok) throw new Error(data?.error || "No se pudo crear el docente.");
   return data.docente;
 }

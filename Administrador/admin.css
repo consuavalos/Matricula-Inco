@@ -301,6 +301,20 @@ body {
   color: #56725e;
 }
 
+.admin-header .identificador-panel {
+  position: absolute;
+  top: 22px;
+  right: 26px;
+  margin: 0;
+  padding: 11px 17px;
+  border: 2px solid var(--verde-medio);
+  border-radius: 999px;
+  background: #fffdf7;
+  color: var(--verde-oscuro);
+  font-size: 1.12rem;
+  font-weight: 700;
+}
+
 /* =========================================================
    TARJETA DE BÚSQUEDA / REPORTES
    ========================================================= */
@@ -472,6 +486,12 @@ body {
   );
 
   color: #3a2c05 !important;
+}
+
+/* Botón para activar/guardar la edición de la matrícula. */
+.btn-Modificar {
+  background: linear-gradient(135deg, #1f5fa8, #123d72);
+  color: #ffffff !important;
 }
 
 .btn-documentos {
@@ -1158,6 +1178,15 @@ body {
     font-size: 1.6rem;
   }
 
+  .admin-header .identificador-panel {
+    position: relative;
+    top: auto;
+    right: auto;
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 1rem;
+  }
+
   .checklist-item {
     grid-template-columns: 1fr;
   }
@@ -1568,4 +1597,43 @@ body {
     page-break-inside: avoid;
     break-inside: avoid;
   }
+}
+
+/* Alertas académicas mostradas en Reportes. */
+.fila-repitiente td {
+  background: #fff8cf !important;
+}
+
+.fila-sobreedad td {
+  background: #ffe5c2 !important;
+}
+
+.badge-alerta {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-repitiente {
+  background: #f5d547;
+  color: #4a3900;
+}
+
+.badge-sobreedad {
+  background: #f6bd82;
+  color: #683300;
+}
+
+.alertas-academicas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 16px;
+}
+
+.alertas-academicas[hidden] {
+  display: none;
 }
