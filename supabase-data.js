@@ -17,6 +17,16 @@ function uno(valor) {
   return Array.isArray(valor) ? (valor[0] || null) : (valor || null);
 }
 
+// Evita que las búsquedas dejen la pantalla cargando indefinidamente.
+function conTiempoMaximo(promesa, milisegundos = 5000) {
+  return Promise.race([
+    promesa,
+    new Promise((_, rechazar) => {
+      setTimeout(() => rechazar(new Error("La búsqueda tardó más de 5 segundos. Intente nuevamente.")), milisegundos);
+    }),
+  ]);
+}
+
 function fechaParaFormulario(valor) {
   if (!valor) return "";
   const partes = String(valor).split("-");
@@ -153,22 +163,22 @@ async function crearMatricula(datos) {
 }
 
 async function buscarMatriculaPorNie(nie) {
-  const { data, error } = await supabase
+  const { data, error } = await conTiempoMaximo(supabase
     .from("matriculas")
     .select(SELECCION_COMPLETA)
     .eq("alumnos.nie", nie)
     .order("anio_lectivo", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle());
   if (error) throw error;
   return aDocumentoPlano(data);
 }
 
 async function listarMatriculas() {
-  const { data, error } = await supabase
+  const { data, error } = await conTiempoMaximo(supabase
     .from("matriculas")
     .select(SELECCION_COMPLETA)
-    .order("creado_en", { ascending: false });
+    .order("creado_en", { ascending: false }));
   if (error) throw error;
   return (data || []).map(aDocumentoPlano);
 }
