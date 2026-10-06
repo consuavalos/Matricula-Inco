@@ -930,6 +930,115 @@ body.tema-oscuro {
   }
 }
 
+.matricula-finalizada {
+  max-width: 720px;
+  margin: 30px auto;
+  padding: 42px 28px;
+  border: 1px solid #b7d9bd;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #eef8ef, #fffdf7);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.10);
+  color: #0f6a3b;
+  text-align: center;
+}
+
+.matricula-finalizada h2 {
+  margin: 0 0 12px;
+  font-size: 2rem;
+}
+
+.matricula-finalizada p {
+  margin: 8px 0;
+  font-size: 1.08rem;
+}
+
+.matricula-finalizada .redireccion-final {
+  color: #5b6b61;
+  font-size: 0.95rem;
+}
+
+.comprobante-matricula {
+  max-width: 520px;
+  margin: 24px auto 18px;
+  padding: 24px;
+  border: 2px solid #0f6a3b;
+  border-radius: 12px;
+  background: #fff;
+  color: #183a2a;
+  text-align: left;
+}
+
+.comprobante-matricula h3,
+.comprobante-instituto {
+  margin: 0;
+  text-align: center;
+}
+
+.comprobante-matricula h3 {
+  font-size: 1.35rem;
+}
+
+.comprobante-instituto {
+  margin: 6px 0 18px;
+  color: #0f6a3b;
+  font-weight: 700;
+}
+
+#datosComprobante {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+#datosComprobante div {
+  display: grid;
+  grid-template-columns: 44% 56%;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #dbe8da;
+}
+
+#datosComprobante dt {
+  font-weight: 700;
+}
+
+#datosComprobante dd {
+  margin: 0;
+}
+
+.acciones-comprobante {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.acciones-comprobante button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-imprimir-comprobante {
+  background: #0f6a3b;
+  color: #fff;
+}
+
+.btn-inicio-comprobante {
+  background: #e3ac1a;
+  color: #1c3025;
+}
+
+@media print {
+  body > * { display: none !important; }
+  .contenedor-formulario { display: block !important; margin: 0 !important; }
+  .matricula-finalizada { display: block !important; max-width: none; margin: 0; padding: 0; border: none; box-shadow: none; }
+  .acciones-comprobante, .redireccion-final { display: none !important; }
+  .comprobante-matricula { max-width: none; box-shadow: none; }
+}
+
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 700px) {
   .grid-2, .grid-3, .grid-4 {

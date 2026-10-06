@@ -41,6 +41,35 @@ const vistaPrevia = document.getElementById("vistaPreviaFoto");
 let pasoActual = 1;
 const TOTAL_PASOS = pasos.length;
 
+function mostrarComprobanteMatricula(data) {
+  const nombre = [data.primerNombre, data.segundoNombre, data.primerApellido, data.segundoApellido]
+    .filter(Boolean)
+    .join(" ");
+  const campos = [
+    ["Número de ficha", data.numeroFicha],
+    ["NIE", data.nie],
+    ["Estudiante", nombre],
+    ["Grado", data.grado],
+    ["Especialidad", data.especialidad],
+    ["Fecha de matrícula", data.fechaMatricula],
+    ["Hora", data.horaMatricula],
+  ];
+  const destino = document.getElementById("datosComprobante");
+  if (destino) {
+    destino.innerHTML = campos.map(([etiqueta, valor]) =>
+      `<div><dt>${etiqueta}</dt><dd>${valor || "-"}</dd></div>`
+    ).join("");
+  }
+}
+
+window.imprimirComprobanteMatricula = function () {
+  window.print();
+};
+
+window.volverInicioMatricula = function () {
+  window.location.replace("../index.html");
+};
+
 /* =========================================================
    VALIDACIÓN POR CAMPO (mensajes en vivo + bloqueo de avance)
 ========================================================= */
@@ -834,44 +863,18 @@ if (form) {
       const docRef = await crearMatricula(data);
       console.log("✅ Matrícula guardada con ID:", docRef.id);
 
-      if (mensajeExito) {
-        mensajeExito.textContent = "✅ ¡Matrícula guardada exitosamente! ID: " + docRef.id;
-        mensajeExito.style.color = "green";
-        mensajeExito.style.fontWeight = "bold";
-        mensajeExito.style.fontSize = "1.2rem";
-      }
+      // La matrícula ya fue guardada: se oculta el formulario para evitar
+      // cambios o un segundo envío y se muestra el cierre definitivo.
+      form.querySelectorAll("input, select, textarea, button").forEach((campo) => {
+        campo.disabled = true;
+      });
+      form.hidden = true;
 
-      // Resetear formulario después de 3 segundos
-      setTimeout(async () => {
-        form.reset();
-        conQuienVive?.dispatchEvent(new Event("change"));
-        if (vistaPrevia) vistaPrevia.innerHTML = "";
-        fotoInput?.closest(".foto-label")?.classList.remove("con-foto");
-        if (edad) edad.value = "";
-        if (nie) nie.dataset.duplicado = "false";
-        
-        // Limpiar campos de tallas según sexo
-        const sexoSelect = document.getElementById("sexo");
-        if (sexoSelect) sexoSelect.value = "";
-        configurarTallas();
-        
-        // Eliminar foto Base64
-        const fotoBase64 = document.getElementById("fotoBase64");
-        if (fotoBase64) fotoBase64.remove();
+      const panelFinal = document.getElementById("matriculaFinalizada");
+      if (panelFinal) panelFinal.hidden = false;
+      mostrarComprobanteMatricula(data);
 
-        // Limpiar mensajes de error visibles
-        form.querySelectorAll(".campo-invalido").forEach(c => c.classList.remove("campo-invalido"));
-        form.querySelectorAll(".error-mensaje").forEach(s => s.textContent = "");
-        
-        if (mensajeExito) {
-          mensajeExito.textContent = "";
-          mensajeExito.style.color = "";
-        }
-        
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        await generarNumeroFicha();
-        mostrarPaso(1);
-      }, 3000);
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
     } catch (error) {
       console.error("❌ Error al guardar:", error);

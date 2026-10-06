@@ -449,6 +449,7 @@
 
 
           <button
+            type="button"
             onclick="modificarcampos()"
             class="btn-Modificar"
           >
@@ -576,6 +577,20 @@
 
           </div>
 
+          <div class="campo">
+
+            <label for="filtroSituacionAcademica">
+              Situación académica
+            </label>
+
+            <select id="filtroSituacionAcademica">
+              <option value="">Todos</option>
+              <option value="repitiente">Repitiendo grado</option>
+              <option value="sobreedad">Sobreedad</option>
+            </select>
+
+          </div>
+
 
         </div>
 
@@ -597,6 +612,26 @@
           class="btn-limpiar-reporte"
         >
           Limpiar filtros
+        </button>
+
+        <button
+          id="btnDescargarReporteExcel"
+          type="button"
+          onclick="descargarReporteExcel()"
+          class="btn-descargar-excel"
+          disabled
+        >
+          Descargar Excel
+        </button>
+
+        <button
+          id="btnImprimirReporte"
+          type="button"
+          onclick="imprimirReporte()"
+          class="btn-imprimir-reporte"
+          disabled
+        >
+          Imprimir reporte
         </button>
 
 
@@ -697,12 +732,6 @@
         id="resultadosBusqueda"
         style="display: none; margin-top: 30px;"
       >
-
-
-        <!-- Contenido para imprimir / PDF -->
-
-        <div id="contenidoImprimir"></div>
-
 
         <div class="card-resultado">
 
@@ -1166,6 +1195,9 @@
 
         </div>
 
+        <!-- Vista previa de la ficha, al final de los datos. -->
+        <div id="contenidoImprimir"></div>
+
       </section>
 
     </main>
@@ -1318,6 +1350,7 @@
   </div>
 
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script
     type="module"
     src="admin.js"

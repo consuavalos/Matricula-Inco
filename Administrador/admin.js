@@ -8,6 +8,9 @@ import {
   listarMatriculas,
   obtenerPerfil,
 } from "../supabase-data.js";
+import { descargarTablaExcel } from "../excel-export.js";
+
+let ultimosResultadosReportes = [];
 const accesoAdministrador = await protegerRuta("administrador");
 
 if (accesoAdministrador) {
@@ -106,6 +109,11 @@ window.buscarMatricula = async function () {
   }
 
   try {
+    // Cada búsqueda inicia con la ficha bloqueada para no arrastrar un
+    // modo de edición anterior a otro estudiante.
+    modoEdicion = false;
+    const botonModificar = document.querySelector(".btn-Modificar");
+    if (botonModificar) botonModificar.textContent = "✏️ Modificar";
     mostrarMensaje("⏳ Buscando...", "loading");
     ocultarResultados();
 
@@ -753,7 +761,7 @@ window.descargarPDF = function() {
 let modoEdicion = false;
 
 const CAMPOS_EDITABLES = [
-  "r_numeroFicha", "r_fechaMatricula",
+  "r_numeroFicha", "r_fechaMatricula", "r_nie",
   "r_primerApellido", "r_segundoApellido", "r_primerNombre", "r_segundoNombre",
   "r_fechaNacimiento", "r_edad", "r_sexo", "r_telefonoEstudiante", "r_correoEstudiantil", "r_correoPersonal",
 
@@ -787,12 +795,12 @@ window.modificarcampos = async function () {
 
   // --- Si NO está en modo edición: activar edición ---
   if (!modoEdicion) {
-    CAMPOS_EDITABLES.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.readOnly = false;
-        el.classList.add("campo-editable");
-      }
+    document.querySelectorAll("#resultadosBusqueda input.campo-lectura").forEach((el) => {
+      el.readOnly = false;
+      el.removeAttribute("readonly");
+      el.disabled = false;
+      el.setAttribute("aria-readonly", "false");
+      el.classList.add("campo-editable");
     });
 
     modoEdicion = true;
@@ -819,16 +827,15 @@ window.modificarcampos = async function () {
     // Actualizar copia local con los nuevos valores
     matriculaActual = { ...matriculaActual, ...datosActualizados };
 
-    CAMPOS_EDITABLES.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.readOnly = true;
-        el.classList.remove("campo-editable");
-      }
+    document.querySelectorAll("#resultadosBusqueda input.campo-lectura").forEach((el) => {
+      el.readOnly = true;
+      el.setAttribute("readonly", "");
+      el.setAttribute("aria-readonly", "true");
+      el.classList.remove("campo-editable");
     });
 
     modoEdicion = false;
-    if (btnModificar) btnModificar.textContent = " Modificar";
+    if (btnModificar) btnModificar.textContent = "✏️ Modificar";
 
     // Refrescar la ficha imprimible/PDF con los datos ya actualizados
     generarFichaImprimir(matriculaActual, matriculaActual);
@@ -1004,15 +1011,21 @@ window.buscarReportes = async function () {
   const mensajeReportes = document.getElementById("mensajeReportes");
   const tablaContenedor = document.getElementById("tablaReportesContenedor");
   const cuerpoTabla = document.getElementById("cuerpoTablaReportes");
+  const botonExcel = document.getElementById("btnDescargarReporteExcel");
+  const botonImprimir = document.getElementById("btnImprimirReporte");
 
   const nie = document.getElementById("filtroNie").value.trim();
   const grado = document.getElementById("filtroGrado").value.trim();
   const especialidad = document.getElementById("filtroEspecialidad").value.trim();
+  const situacionAcademica = document.getElementById("filtroSituacionAcademica").value;
 
   mensajeReportes.textContent = "⏳ Buscando...";
   mensajeReportes.style.color = "#1976d2";
   tablaContenedor.style.display = "none";
   cuerpoTabla.innerHTML = "";
+  ultimosResultadosReportes = [];
+  if (botonExcel) botonExcel.disabled = true;
+  if (botonImprimir) botonImprimir.disabled = true;
 
   try {
     let resultados = await listarMatriculas();
@@ -1025,6 +1038,14 @@ window.buscarReportes = async function () {
     }
     if (especialidad) {
       resultados = resultados.filter(r => r.especialidad === especialidad);
+    }
+    if (situacionAcademica) {
+      resultados = resultados.filter((r) => {
+        const alerta = obtenerAlertaAcademica(r);
+        return situacionAcademica === "repitiente"
+          ? alerta.esRepitiente
+          : alerta.esSobreedad;
+      });
     }
 
     if (resultados.length === 0) {
@@ -1053,13 +1074,125 @@ window.buscarReportes = async function () {
       cuerpoTabla.appendChild(fila);
     });
 
+    ultimosResultadosReportes = resultados;
     tablaContenedor.style.display = "block";
+    if (botonExcel) botonExcel.disabled = false;
+    if (botonImprimir) botonImprimir.disabled = false;
 
   } catch (error) {
     console.error("❌ Error en reportes:", error);
     mensajeReportes.textContent = "❌ Error al buscar: " + error.message;
     mensajeReportes.style.color = "#d32f2f";
   }
+};
+
+/* Descarga exactamente las filas que quedaron visibles tras aplicar los filtros. */
+window.descargarReporteExcel = function () {
+  if (!ultimosResultadosReportes.length) {
+    alert("Primero realice una búsqueda con resultados.");
+    return;
+  }
+
+  const filas = ultimosResultadosReportes.map((matricula) => {
+    const nombre = [
+      matricula.primerNombre,
+      matricula.segundoNombre,
+      matricula.primerApellido,
+      matricula.segundoApellido,
+    ].filter(Boolean).join(" ");
+    const alerta = obtenerAlertaAcademica(matricula);
+    const etiquetas = [];
+    if (alerta.esRepitiente) etiquetas.push("Repitiendo año");
+    if (alerta.esSobreedad) etiquetas.push("Sobreedad");
+    return [
+      matricula.numeroFicha || "-",
+      matricula.nie || "-",
+      nombre || "-",
+      matricula.grado || "-",
+      matricula.especialidad || "-",
+      etiquetas.join(", ") || "—",
+    ];
+  });
+
+  const fecha = new Date().toISOString().slice(0, 10);
+  descargarTablaExcel({
+    nombreArchivo: `reporte-matriculas-${fecha}`,
+    titulo: "Reporte de Matrículas - Instituto Nacional de Comercio",
+    encabezados: ["Ficha", "NIE", "Nombre completo", "Grado", "Especialidad", "Alerta"],
+    filas,
+  });
+};
+
+function escaparTextoReporte(valor) {
+  return String(valor ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/* Abre una hoja carta con el mismo diseño del reporte web. */
+window.imprimirReporte = function () {
+  if (!ultimosResultadosReportes.length) {
+    alert("Primero realice una búsqueda con resultados.");
+    return;
+  }
+
+  const filas = ultimosResultadosReportes.map((matricula) => {
+    const nombre = [matricula.primerNombre, matricula.segundoNombre, matricula.primerApellido, matricula.segundoApellido]
+      .filter(Boolean)
+      .join(" ");
+    const alerta = obtenerAlertaAcademica(matricula);
+    const distintivos = [
+      alerta.esRepitiente ? '<span class="alerta repitiente">Repitiendo año</span>' : "",
+      alerta.esSobreedad ? '<span class="alerta sobreedad">Sobreedad</span>' : "",
+    ].filter(Boolean).join(" ") || "—";
+    const claseFila = alerta.esSobreedad ? "fila-sobreedad" : (alerta.esRepitiente ? "fila-repitiente" : "");
+    return `<tr class="${claseFila}">
+      <td>${escaparTextoReporte(matricula.numeroFicha || "-")}</td>
+      <td>${escaparTextoReporte(matricula.nie || "-")}</td>
+      <td>${escaparTextoReporte(nombre || "-")}</td>
+      <td><span class="grado">${escaparTextoReporte(matricula.grado || "-")}</span></td>
+      <td><span class="especialidad">${escaparTextoReporte(matricula.especialidad || "-")}</span></td>
+      <td>${distintivos}</td>
+    </tr>`;
+  }).join("");
+
+  const ventana = window.open("", "_blank", "width=1100,height=800");
+  if (!ventana) {
+    alert("El navegador bloqueó la ventana de impresión. Permita las ventanas emergentes e inténtelo nuevamente.");
+    return;
+  }
+
+  ventana.document.write(`<!DOCTYPE html>
+    <html lang="es"><head><meta charset="UTF-8"><title>Reporte de Matrículas</title>
+    <style>
+      @page { size: letter landscape; margin: .42in; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #173227; background: #fff; }
+      .encabezado { text-align: center; margin-bottom: 18px; }
+      h1 { margin: 0; color: #075e54; font-size: 22px; }
+      p { margin: 5px 0 0; font-size: 13px; color: #476055; }
+      table { width: 100%; border-collapse: separate; border-spacing: 0; overflow: hidden; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+      th { padding: 12px 10px; background: linear-gradient(90deg, #075e54, #35a86d); color: #fff; text-align: left; font-size: 11px; text-transform: uppercase; }
+      td { padding: 11px 10px; border-bottom: 1px solid #e7eee7; font-size: 11px; }
+      tr:last-child td { border-bottom: 0; }
+      .fila-repitiente td { background: #fff8cf; }
+      .fila-sobreedad td { background: #ffe5c2; }
+      .grado, .especialidad, .alerta { display: inline-block; padding: 4px 7px; border-radius: 999px; font-size: 10px; font-weight: bold; }
+      .grado { background: #e1f0ff; color: #2770a5; }
+      .especialidad { background: #fff0df; color: #d45100; }
+      .repitiente { background: #f5d547; color: #4a3900; }
+      .sobreedad { background: #f6bd82; color: #683300; }
+      @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    </style></head><body>
+      <div class="encabezado"><h1>Reporte de Matrículas</h1><p>Instituto Nacional de Comercio · ${ultimosResultadosReportes.length} resultado(s)</p></div>
+      <table><thead><tr><th>Ficha</th><th>NIE</th><th>Nombre completo</th><th>Grado</th><th>Especialidad</th><th>Alerta</th></tr></thead><tbody>${filas}</tbody></table>
+    </body></html>`);
+  ventana.document.close();
+  ventana.focus();
+  ventana.setTimeout(() => ventana.print(), 300);
 };
 
 /* =========================================================
@@ -1082,8 +1215,12 @@ window.limpiarReportes = function () {
   document.getElementById("filtroNie").value = "";
   document.getElementById("filtroGrado").value = "";
   document.getElementById("filtroEspecialidad").value = "";
+  document.getElementById("filtroSituacionAcademica").value = "";
   document.getElementById("mensajeReportes").textContent = "";
   document.getElementById("tablaReportesContenedor").style.display = "none";
+  document.getElementById("btnDescargarReporteExcel").disabled = true;
+  document.getElementById("btnImprimirReporte").disabled = true;
+  ultimosResultadosReportes = [];
 };
 
 /* Usa las mismas reglas del formulario de nuevo ingreso para avisar al administrador. */
@@ -1103,6 +1240,8 @@ function obtenerAlertaAcademica(matricula) {
   if (esSobreedad) alertas.push('<span class="badge-alerta badge-sobreedad">Sobreedad</span>');
   return {
     claseFila: esSobreedad ? "fila-sobreedad" : (esRepitiente ? "fila-repitiente" : ""),
-    html: alertas.length ? alertas.join(" ") : "—"
+    html: alertas.length ? alertas.join(" ") : "—",
+    esRepitiente,
+    esSobreedad,
   };
 }

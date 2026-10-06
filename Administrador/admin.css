@@ -706,6 +706,56 @@ body {
     0 6px 14px rgba(0, 0, 0, 0.1);
 }
 
+.btn-descargar-excel {
+  border: none;
+  border-radius: 13px;
+  padding: 12px 22px;
+  margin-right: 10px;
+  background: linear-gradient(135deg, #e6ab17, #c98a08);
+  color: #1e2a3a;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.btn-descargar-excel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(201, 138, 8, 0.28);
+}
+
+.btn-descargar-excel:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-imprimir-reporte {
+  border: none;
+  border-radius: 13px;
+  padding: 12px 22px;
+  margin-right: 10px;
+  background: linear-gradient(135deg, #157347, #0c5c3b);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.btn-imprimir-reporte:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(12, 92, 59, 0.28);
+}
+
+.btn-imprimir-reporte:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+  box-shadow: none;
+}
+
 /* =========================================================
    PANEL DE RESULTADO
    ========================================================= */
@@ -1221,9 +1271,17 @@ body {
 @media print {
 
   @page {
-    size: 216mm 330mm;
+    size: letter portrait;
+    margin: 0;
+  }
 
-    margin: 8mm;
+  html,
+  body {
+    width: 8.5in !important;
+    min-height: 11in !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
   }
 
   body * {
@@ -1236,13 +1294,15 @@ body {
   }
 
   #contenidoImprimir {
-    position: absolute;
-
-    left: 0;
-
-    top: 0;
-
-    width: 100%;
+    position: fixed;
+    inset: 0;
+    width: 8.5in !important;
+    min-height: 11in;
+    padding: 0.22in 0.25in;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background: #ffffff;
   }
 }
 
@@ -1585,8 +1645,10 @@ body {
 
 @media print {
   .ficha-oficial {
-    width: 100%;
-    padding: 0 4mm;
+    width: 7.95in;
+    max-width: 7.95in;
+    margin: 0 auto;
+    padding: 0.08in 0.13in 0.12in;
   }
 
   .ficha-oficial,

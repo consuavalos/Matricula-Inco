@@ -577,6 +577,21 @@
 
       <p id="mensajeExito" class="mensaje-exito"></p>
     </form>
+
+    <section id="matriculaFinalizada" class="matricula-finalizada" hidden aria-live="polite">
+      <h2>✅ Matrícula terminada</h2>
+      <p>Los datos fueron registrados correctamente.</p>
+      <div id="comprobanteMatricula" class="comprobante-matricula">
+        <h3>Comprobante de matrícula</h3>
+        <p class="comprobante-instituto">Instituto Nacional de Comercio</p>
+        <dl id="datosComprobante"></dl>
+      </div>
+      <p class="redireccion-final">Puede imprimir este comprobante o guardarlo como PDF.</p>
+      <div class="acciones-comprobante">
+        <button type="button" class="btn-imprimir-comprobante" onclick="imprimirComprobanteMatricula()">Imprimir comprobante</button>
+        <button type="button" class="btn-inicio-comprobante" onclick="volverInicioMatricula()">Volver al inicio</button>
+      </div>
+    </section>
   </main>
 
   <script type="module" src="nuevo_ingreso.js?v=3"></script>

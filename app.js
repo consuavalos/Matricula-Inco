@@ -235,9 +235,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     throw new Error('Rol de usuario no autorizado.');
                 }
             } catch (error) {
+                const errorDeConexion = /failed to fetch|dynamically imported module/i.test(error.message || '');
                 mensajeAdmin.textContent = error.message === 'Invalid login credentials'
                     ? 'Correo o contraseña incorrectos.'
-                    : `No se pudo iniciar sesión: ${error.message}`;
+                    : errorDeConexion
+                        ? 'No se pudo conectar con Supabase. Revise su conexión a Internet y vuelva a intentar.'
+                        : `No se pudo iniciar sesión: ${error.message}`;
                 usuarioAdmin.classList.add('campo-error');
                 passwordAdmin.classList.add('campo-error');
                 if (boton) boton.disabled = false;
