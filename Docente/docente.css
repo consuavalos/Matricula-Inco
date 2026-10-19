@@ -525,3 +525,5 @@ body {
   background: linear-gradient(135deg, #caa12b, #a97812);
   color: #ffffff !important;
 }
+
+.campo-editable { background: #fffde7 !important; border: 2px solid #b58b18 !important; cursor: text; }

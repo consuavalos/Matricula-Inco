@@ -1,5 +1,6 @@
 import { protegerRuta } from "../auth-guard.js";
 import {
+  actualizarMatricula,
   buscarMatriculaPorNie,
   guardarDocumentos as guardarDocumentosSupabase,
 } from "../supabase-data.js";
@@ -98,6 +99,68 @@ const observacionesDocumentos = document.getElementById("observacionesDocumentos
 const mensajeDocumentos = document.getElementById("mensajeDocumentos");
 
 let matriculaActual = null;
+let guardandoCambios = false;
+
+function establecerEdicion(activa) {
+  resultadosSection.querySelectorAll('input[id^="r_"]').forEach((campo) => {
+    campo.readOnly = !activa;
+    campo.classList.toggle("campo-editable", activa);
+  });
+  document.getElementById("btnModificar").style.display = activa ? "none" : "";
+  document.getElementById("btnGuardarCambios").style.display = activa ? "" : "none";
+  document.getElementById("btnCancelarCambios").style.display = activa ? "" : "none";
+}
+
+window.modificarcampos = function () {
+  if (!accesoDocente || !matriculaActual || guardandoCambios) return;
+  establecerEdicion(true);
+  mostrarMensaje("Puede modificar los datos y luego guardar los cambios o cancelar.", "info");
+};
+
+window.cancelarModificacion = function () {
+  if (!matriculaActual || guardandoCambios) return;
+  mostrarResultados(matriculaActual);
+  establecerEdicion(false);
+  mostrarMensaje("Modificación cancelada.", "info");
+};
+
+window.guardarCambios = async function () {
+  if (!accesoDocente || !matriculaActual || guardandoCambios) return;
+  const cambios = {};
+  resultadosSection.querySelectorAll('input[id^="r_"]').forEach((campo) => {
+    const clave = campo.id.slice(2);
+    const valor = campo.value.trim();
+    if (valor !== String(matriculaActual[clave] ?? "")) cambios[clave] = valor;
+  });
+  if (!Object.keys(cambios).length) {
+    establecerEdicion(false);
+    mostrarMensaje("No hay cambios para guardar.", "info");
+    return;
+  }
+  if ("nie" in cambios && !cambios.nie) {
+    mostrarMensaje("El NIE del estudiante no puede quedar vacío.", "warning");
+    return;
+  }
+  guardandoCambios = true;
+  const controles = [document.getElementById("btnGuardarCambios"), document.getElementById("btnCancelarCambios"), buscarInput];
+  controles.forEach(control => control.disabled = true);
+  resultadosSection.querySelectorAll('input[id^="r_"]').forEach(campo => campo.readOnly = true);
+  mostrarMensaje("Guardando cambios…", "loading");
+  try {
+    await actualizarMatricula(matriculaActual, cambios);
+    Object.assign(matriculaActual, cambios);
+    mostrarResultados(matriculaActual);
+    establecerEdicion(false);
+    prepararDocumentos(matriculaActual);
+    mostrarMensaje("✅ Cambios guardados correctamente.", "success");
+  } catch (error) {
+    establecerEdicion(true);
+    mostrarMensaje(`No se pudieron guardar los cambios: ${error.message}`, "error");
+  } finally {
+    guardandoCambios = false;
+    controles.forEach(control => control.disabled = false);
+  }
+};
 
 /* Llena el <select> de tipos de indicaciones una sola vez */
 Object.keys(INDICACIONES).forEach((clave) => {
@@ -124,6 +187,7 @@ function detectarTipoIndicaciones(grado, tipoIngreso) {
    FUNCIÓN PRINCIPAL DE BÚSQUEDA
 ========================================================= */
 window.buscarMatricula = async function () {
+  if (!accesoDocente || guardandoCambios) return;
   const valor = buscarInput.value.trim();
 
   if (!valor) {
@@ -366,6 +430,7 @@ function mostrarMensaje(texto, tipo = "info") {
 }
 
 function ocultarResultados() {
+  establecerEdicion(false);
   if (resultadosSection) resultadosSection.style.display = "none";
   matriculaActual = null;
 }

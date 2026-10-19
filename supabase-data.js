@@ -247,7 +247,7 @@ function seleccionarCambios(cambios, mapa) {
 async function actualizarMatricula(registro, cambios) {
   const tareas = [];
   const agregar = (tabla, valores, columna, id) => {
-    if (Object.keys(valores).length) tareas.push(supabase.from(tabla).update(valores).eq(columna, id));
+    if (Object.keys(valores).length) tareas.push(supabase.from(tabla).update(valores).eq(columna, id).select("id").single());
   };
 
   const datosMatricula = seleccionarCambios(cambios, {

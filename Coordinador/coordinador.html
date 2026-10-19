@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Coordinación - INCO</title>
   <link rel="stylesheet" href="coordinador.css">
+  <link rel="stylesheet" href="../ficha-oficial.css">
 </head>
 <body>
   <header class="barra no-imprimir">
@@ -19,6 +20,19 @@
     </div>
   </header>
 
+  <section class="consulta-matriculas no-imprimir" aria-labelledby="tituloConsulta">
+    <h2 id="tituloConsulta">Consultar ficha de matrícula</h2>
+    <p>Escriba el NIE del estudiante para consultar su matrícula más reciente.</p>
+    <form id="buscarMatriculaCoordinador">
+      <label for="nieConsulta">NIE del estudiante</label>
+      <div class="controles-consulta">
+        <input id="nieConsulta" type="text" required autocomplete="off">
+        <button type="submit" id="botonConsulta" disabled>Buscar matrícula</button>
+      </div>
+    </form>
+    <p id="estadoConsulta" role="status" aria-live="polite"></p>
+    <article id="fichaConsulta" hidden aria-label="Ficha de matrícula del estudiante"></article>
+  </section>
   <main class="vista-acta">
     <form id="actaCondicionamiento" class="hoja-carta">
       <header class="encabezado-acta">
