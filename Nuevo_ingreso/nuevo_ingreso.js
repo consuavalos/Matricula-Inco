@@ -1,8 +1,10 @@
 import { iniciarBuscadorNacimiento, validarLugarNacimiento } from './buscador-nacimiento.js';
+import { iniciarBorrador } from './borrador.mjs?v=2';
+import { crearFichaAleatoria, fichaDelAnioSiguiente } from './ficha-aleatoria.mjs';
+import { normalizarTexto, errorNombre, errorTelefono, errorCorreo, errorFecha, errorFoto, errorTextoDescriptivo } from './validaciones.mjs?v=3';
 import {
   crearMatricula,
   nieYaExiste,
-  obtenerSiguienteFicha,
 } from "../supabase-data.js";
 
 /* =========================================================
@@ -40,6 +42,9 @@ const fotoInput = document.getElementById("fotoEstudiante");
 const vistaPrevia = document.getElementById("vistaPreviaFoto");
 
 let pasoActual = 1;
+let guardando = false;
+let guardado = false;
+let controladorBorrador;
 const TOTAL_PASOS = pasos.length;
 
 function mostrarComprobanteMatricula(data) {
@@ -72,10 +77,16 @@ function mostrarComprobanteMatricula(data) {
 
   const destino = document.getElementById("datosComprobante");
   if (destino) {
-    destino.innerHTML = campos
-      .filter(([, valor]) => valor)
-      .map(([etiqueta, valor]) => `<div><dt>${etiqueta}</dt><dd>${valor}</dd></div>`)
-      .join("");
+    destino.replaceChildren();
+    campos.filter(([, valor]) => valor).forEach(([etiqueta, valor]) => {
+      const fila = document.createElement('div');
+      const titulo = document.createElement('dt');
+      const contenido = document.createElement('dd');
+      titulo.textContent = etiqueta;
+      contenido.textContent = valor;
+      fila.append(titulo, contenido);
+      destino.appendChild(fila);
+    });
   }
 }
 
@@ -118,7 +129,9 @@ window.descargarComprobantePDF = function () {
   }, 50);
 };
 
-window.volverInicioMatricula = function () {
+window.volverInicioMatricula = async function () {
+  if (!guardado) return;
+  await controladorBorrador?.eliminar();
   window.location.replace("../index.html");
 };
 
@@ -126,7 +139,7 @@ window.volverInicioMatricula = function () {
    VALIDACIÓN POR CAMPO
 ========================================================= */
 const mensajesPersonalizados = {
-  nie: "El NIE debe contener solo números (máximo 9 dígitos).",
+  nie: "El NIE debe contener solo números, hasta 12 dígitos.",
   duiEstudiante: "Formato requerido: 00000000-0.",
   lugarNacimiento: "Ingrese el lugar de nacimiento del estudiante.",
   tipoTransporte: "Seleccione el tipo de transporte que utiliza.",
@@ -134,10 +147,10 @@ const mensajesPersonalizados = {
   conQuienVive: "Seleccione con quién vive el estudiante.",
   conQuienViveOtro: "Especifique con quién vive el estudiante.",
   direccionResidencia: "Ingrese la dirección de residencia.",
-  primerApellido: "Ingrese el primer apellido (solo letras, máximo 10 caracteres).",
-  segundoApellido: "Ingrese el segundo apellido (solo letras, máximo 10 caracteres).",
-  primerNombre: "Ingrese el primer nombre (solo letras, máximo 10 caracteres).",
-  segundoNombre: "Ingrese el segundo nombre (solo letras, máximo 10 caracteres).",
+  primerApellido: "Ingrese un apellido válido (máximo 12 caracteres).",
+  segundoApellido: "Ingrese un apellido válido (máximo 12 caracteres).",
+  primerNombre: "Ingrese un nombre válido (máximo 12 caracteres).",
+  segundoNombre: "Ingrese un nombre válido (máximo 12 caracteres).",
   fechaNacimiento: "Seleccione la fecha de nacimiento del estudiante.",
   sexo: "Seleccione el sexo del estudiante.",
   telefonoEstudiante: "Ingrese exactamente 8 números.",
@@ -165,7 +178,7 @@ const mensajesPersonalizados = {
   duiResponsable: "Formato requerido: 00000000-0.",
   telefonoResponsable: "Ingrese exactamente 8 números.",
   whatsappResponsable: "Ingrese exactamente 8 números.",
-  correoResponsable: "Ingrese un correo electrónico válido que termine en @gmail.com.",
+  correoResponsable: "Ingrese un correo electrónico válido (Gmail, Yahoo, Outlook u otro proveedor).",
   distanciaKm: "Ingrese la distancia en kilómetros (máximo 3 números, puede incluir un punto decimal).",
   madreNombre: "Ingrese el nombre completo de la madre (solo letras).",
   madreOcupacion: "Ingrese la ocupación de la madre.",
@@ -211,6 +224,7 @@ function campoVisible(el) {
 }
 
 function limpiarError(el) {
+  el.removeAttribute('aria-invalid');
   const contenedor = obtenerContenedor(el);
   if (!contenedor) return;
   contenedor.classList.remove("campo-invalido");
@@ -219,16 +233,54 @@ function limpiarError(el) {
   el.style.borderColor = "";
 }
 
-function validarCampo(el) {
-  if (el.type === "submit" || el.type === "button") return true;
+// Ignorar solamente el ocultamiento del paso; respetar campos condicionales ocultos.
+function campoAplicable(el) {
+  if (el.type === 'hidden' || el.disabled) return false;
+  for (let nodo = el; nodo && nodo !== form; nodo = nodo.parentElement) {
+    if (nodo.hidden) return false;
+    if (!nodo.classList.contains('form-step') && getComputedStyle(nodo).display === 'none') return false;
+  }
+  return true;
+}
+
+function validarContenido(el, valor) {
+  if (el.maxLength > 0 && valor.length > el.maxLength) return `Máximo ${el.maxLength} caracteres.`;
+  if (el.id === 'direccionResidencia') return errorTextoDescriptivo(valor, { direccion: true, maximo: 50 });
+  if (['madreOcupacion', 'padreOcupacion', 'madreLugarTrabajo', 'padreLugarTrabajo', 'colegioAnterior'].includes(el.id)) return errorTextoDescriptivo(valor);
+  if (['primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido', 'responsable', 'madreNombre', 'padreNombre'].includes(el.id) || el.classList.contains('hermano-nombre')) return errorNombre(valor, el.maxLength > 0 ? el.maxLength : 50);
+  if (['telefonoEstudiante', 'telefonoResponsable', 'whatsappResponsable', 'madreCelular', 'padreCelular'].includes(el.id)) return errorTelefono(valor, ['whatsappResponsable', 'madreCelular', 'padreCelular'].includes(el.id));
+  if (el.type === 'email') return errorCorreo(valor);
+  if (el.type === 'date') return errorFecha(valor);
+  if (el.tagName === 'SELECT' && !Array.from(el.options).some(o => !o.disabled && o.value === valor)) return 'Seleccione una opción válida de la lista.';
+  if (el.id === 'nie' && (!/^\d{1,12}$/.test(valor) || /^0+$/.test(valor))) return 'Ingrese un NIE de hasta 12 dígitos, distinto de cero.';
+  if (['duiEstudiante', 'duiResponsable', 'madreDui', 'padreDui'].includes(el.id) && /^(\d)\1{7}-\1$/.test(valor)) return 'Revise el DUI: no puede contener todos los dígitos iguales.';
+  if (el.type === 'number' && (!Number.isFinite(Number(valor)) || el.validity.badInput || el.validity.rangeUnderflow || el.validity.rangeOverflow || el.validity.stepMismatch)) return 'Ingrese un número dentro del rango permitido.';
+  if (['text', 'textarea'].includes(el.type) && (valor.length > 500 || /[<>\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(valor))) return 'Use texto de hasta 500 caracteres sin etiquetas HTML ni caracteres de control.';
+  return '';
+}
+
+function avisarError(mensaje) {
+  if (mensajeExito) {
+    mensajeExito.textContent = mensaje;
+    mensajeExito.style.color = 'red';
+    mensajeExito.setAttribute('role', 'alert');
+  }
+  alert(mensaje);
+}
+
+function validarCampo(el, incluirPasoOculto = false) {
+  if (el.type === "submit" || el.type === "button" || el.type === 'hidden') return true;
 
   if (el.type === "file") {
     const fotoError = document.getElementById("fotoError");
-    if (el.hasAttribute("required") && el.files.length === 0) {
-      if (fotoError) fotoError.textContent = "La fotografía es obligatoria.";
+    const mensajeFoto = errorFoto(el.files[0]) || (el.dataset.estadoFoto !== 'lista' ? 'Espere a que termine de cargar una fotografía válida.' : '');
+    if (mensajeFoto) {
+      el.setAttribute('aria-invalid', 'true');
+      if (fotoError) fotoError.textContent = mensajeFoto;
       el.closest(".foto-label")?.style.setProperty("border-color", "red");
       return false;
     } else {
+      el.removeAttribute('aria-invalid');
       if (fotoError) fotoError.textContent = "";
       el.closest(".foto-label")?.style.removeProperty("border-color");
       return true;
@@ -237,7 +289,7 @@ function validarCampo(el) {
 
   if (el.readOnly || el.disabled) return true;
 
-  if (!campoVisible(el)) {
+  if (!(incluirPasoOculto ? campoAplicable(el) : campoVisible(el))) {
     limpiarError(el);
     return true;
   }
@@ -255,7 +307,7 @@ function validarCampo(el) {
     valido = false;
     mensaje = mensajesPersonalizados[el.id] || MENSAJE_OBLIGATORIO;
   } else if (valor && el.pattern) {
-    const regex = new RegExp("^(?:" + el.pattern + ")$");
+    const regex = new RegExp("^(?:" + el.pattern + ")$", 'u');
     if (!regex.test(valor)) {
       valido = false;
       mensaje = mensajesPersonalizados[el.id] || el.title || "El valor ingresado no es válido.";
@@ -272,10 +324,16 @@ function validarCampo(el) {
     mensaje = "Este NIE ya se encuentra registrado en el sistema.";
   }
 
+  if (valido && valor) {
+    mensaje = validarContenido(el, valor);
+    valido = !mensaje;
+  }
+
   const contenedor = obtenerContenedor(el);
   const span = obtenerSpanError(el);
 
   if (!valido) {
+    el.setAttribute('aria-invalid', 'true');
     if (contenedor) contenedor.classList.add("campo-invalido");
     el.style.borderColor = "red";
     span.textContent = mensaje;
@@ -285,7 +343,7 @@ function validarCampo(el) {
   return valido;
 }
 
-function validarPaso(numeroPaso) {
+function validarPaso(numeroPaso, incluirPasoOculto = false) {
   const seccion = document.querySelector(`.form-step[data-step="${numeroPaso}"]`);
   if (!seccion) return true;
 
@@ -306,9 +364,6 @@ function validarPaso(numeroPaso) {
       }
     }
 
-    if (!validarHermanos()) {
-      return false;
-    }
   }
 
   const campos = seccion.querySelectorAll("input, select, textarea");
@@ -318,18 +373,18 @@ function validarPaso(numeroPaso) {
   campos.forEach((el) => {
     if (el.type === "submit" || el.type === "button" || el.readOnly || el.disabled) return;
     if (el.classList && el.classList.contains("hermano-input")) return; // validado aparte
-    const ok = validarCampo(el);
+    const ok = validarCampo(el, incluirPasoOculto);
     if (!ok) {
       pasoValido = false;
       if (!primerInvalido) primerInvalido = el;
     }
   });
 
-  if (!validarHermanos()) {
+  if (numeroPaso === 2 && !validarHermanos()) {
     pasoValido = false;
   }
 
-  if (primerInvalido) {
+  if (primerInvalido && !incluirPasoOculto) {
     primerInvalido.scrollIntoView({ behavior: "smooth", block: "center" });
     if (primerInvalido.type !== "file") {
       primerInvalido.focus({ preventScroll: true });
@@ -339,7 +394,39 @@ function validarPaso(numeroPaso) {
   return pasoValido;
 }
 
+function mensajeErroresPaso(numeroPaso) {
+  const seccion = document.querySelector(`.form-step[data-step="${numeroPaso}"]`);
+  if (!seccion) return 'Revise los campos marcados antes de continuar.';
+  const mensajes = Array.from(seccion.querySelectorAll('[aria-invalid="true"]')).map(el => {
+    const etiqueta = el.id === 'fotoEstudiante' ? 'Fotografía' : el.labels?.[0]?.textContent.trim() || 'Campo';
+    const detalle = el.id === 'fotoEstudiante' ? document.getElementById('fotoError')?.textContent : obtenerContenedor(el).querySelector('.error-mensaje')?.textContent;
+    return `${etiqueta}: ${detalle || 'Revise este dato.'}`;
+  });
+  if (numeroPaso === 2) {
+    const hermanos = document.getElementById('avisoHermanosVacio');
+    if (hermanos && hermanos.style.display !== 'none' && hermanos.textContent) mensajes.push(hermanos.textContent);
+  }
+  return mensajes.length ? `No se puede continuar:\n${mensajes.join('\n')}` : 'Revise los datos del paso actual antes de continuar.';
+}
+
 // Enlazar validación en vivo
+// Normalizar antes de los validadores y del autollenado del responsable.
+function normalizarCampoEntrada(el) {
+  if (['telefonoEstudiante', 'telefonoResponsable', 'whatsappResponsable', 'madreCelular', 'padreCelular'].includes(el.id)) formatearTelefonoEntrada(el);
+  if (el.type === 'email') el.value = el.value.toLowerCase();
+  if (['primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido', 'responsable', 'madreNombre', 'padreNombre'].includes(el.id) || el.classList.contains('hermano-nombre')) capitalizarEnVivo(el);
+}
+['input', 'change', 'blur'].forEach(evento => form.addEventListener(evento, e => normalizarCampoEntrada(e.target), true));
+function configurarSelect(select) {
+  Array.from(select.options).forEach(opcion => {
+    if (opcion.value === '') opcion.disabled = true;
+  });
+}
+form.querySelectorAll('select').forEach(configurarSelect);
+form.querySelectorAll('input[type="email"]').forEach(el => {
+  el.setAttribute('autocapitalize', 'none');
+  el.setAttribute('spellcheck', 'false');
+});
 const todosLosCampos = form.querySelectorAll("input, select, textarea");
 todosLosCampos.forEach((el) => {
   if (el.type === "submit" || el.type === "button" || el.type === "file") return;
@@ -356,8 +443,7 @@ async function nieYaExisteEnBD(valorNie) {
   try {
     return await nieYaExiste(valorNie);
   } catch (error) {
-    console.error("Error verificando NIE duplicado:", error);
-    return false;
+    throw new Error('No se pudo comprobar si el NIE ya está registrado. Revise su conexión e intente de nuevo.');
   }
 }
 
@@ -372,13 +458,23 @@ async function verificarNieDuplicado() {
   if (span) span.textContent = "Verificando NIE…";
   if (contenedor) contenedor.classList.remove("campo-invalido");
 
-  const existe = await nieYaExisteEnBD(valor);
+  let existe;
+  try {
+    existe = await nieYaExisteEnBD(valor);
+  } catch (error) {
+    if (nie.value.trim() !== valor) return false;
+    nie.dataset.duplicado = 'error';
+    if (span) span.textContent = error.message;
+    return false;
+  }
+  if (nie.value.trim() !== valor) return false;
   nie.dataset.duplicado = existe ? "true" : "false";
   validarCampo(nie);
 
   if (!existe && span && span.textContent === "Verificando NIE…") {
     span.textContent = "";
   }
+  return !existe;
 }
 
 if (nie) {
@@ -432,59 +528,60 @@ function configurarCamposSalud() {
 
 function configurarFoto() {
   if (!fotoInput) return;
-
   fotoInput.required = true;
-
-  fotoInput.addEventListener("change", function(e) {
-    const file = this.files[0];
-    const fotoError = document.getElementById("fotoError");
-
-    if (!file) {
-      if (vistaPrevia) vistaPrevia.innerHTML = "";
-      this.closest(".foto-label")?.classList.remove("con-foto");
-      if (fotoError) fotoError.textContent = "La fotografía es obligatoria.";
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      alert("⚠️ Solo se permiten archivos de imagen");
-      this.value = "";
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      alert("⚠️ La imagen no debe superar los 2MB");
-      this.value = "";
-      return;
-    }
-
-    if (fotoError) fotoError.textContent = "";
-    this.closest(".foto-label")?.style.removeProperty("border-color");
-
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const fotoBase64 = event.target.result;
-
-      const img = document.createElement("img");
-      img.src = fotoBase64;
-      img.alt = "Foto del estudiante";
-      if (vistaPrevia) {
-        vistaPrevia.innerHTML = "";
-        vistaPrevia.appendChild(img);
-        fotoInput.closest(".foto-label")?.classList.add("con-foto");
-      }
-
-      let hiddenInput = document.getElementById("fotoBase64");
+  let version = 0;
+  fotoInput.addEventListener('change', async function () {
+    const actual = ++version;
+    const archivo = this.files[0];
+    const oculto = document.getElementById('fotoBase64');
+    if (oculto) oculto.value = '';
+    vistaPrevia?.replaceChildren();
+    this.closest('.foto-label')?.classList.remove('con-foto');
+    this.dataset.estadoFoto = 'cargando';
+    form.dispatchEvent(new Event('fotoinvalidada'));
+    const fallar = mensaje => {
+      if (actual !== version) return;
+      this.dataset.estadoFoto = 'error';
+      const error = document.getElementById('fotoError');
+      if (error) error.textContent = mensaje;
+      form.dispatchEvent(new Event('fotoactualizada'));
+    };
+    const error = errorFoto(archivo);
+    if (error) { fallar(error); return; }
+    try {
+      const bytes = new Uint8Array(await archivo.slice(0, 8).arrayBuffer());
+      const jpg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+      const png = [137,80,78,71,13,10,26,10].every((b, i) => bytes[i] === b);
+      if (!(archivo.type === 'image/jpeg' ? jpg : png)) throw new Error('El archivo no es una imagen JPG o PNG válida.');
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('No se pudo leer la fotografía. Selecciónela nuevamente.'));
+        reader.readAsDataURL(archivo);
+      });
+      const img = document.createElement('img');
+      img.src = base64;
+      await img.decode();
+      if (!img.naturalWidth || img.naturalWidth * img.naturalHeight > 20000000) throw new Error('Use una fotografía de hasta 20 megapíxeles.');
+      if (actual !== version) return;
+      img.alt = 'Foto del estudiante';
+      vistaPrevia?.appendChild(img);
+      this.closest('.foto-label')?.classList.add('con-foto');
+      let hiddenInput = document.getElementById('fotoBase64');
       if (!hiddenInput) {
-        hiddenInput = document.createElement("input");
-        hiddenInput.type = "hidden";
-        hiddenInput.id = "fotoBase64";
-        hiddenInput.name = "fotoBase64";
+        hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.id = 'fotoBase64';
+        hiddenInput.name = 'fotoBase64';
         form.appendChild(hiddenInput);
       }
-      hiddenInput.value = fotoBase64;
-    };
-    reader.readAsDataURL(file);
+      hiddenInput.value = base64;
+      this.dataset.estadoFoto = 'lista';
+      validarCampo(this);
+      form.dispatchEvent(new Event('fotoactualizada'));
+    } catch (error) {
+      fallar(error.message || 'No se pudo abrir la fotografía.');
+    }
   });
 }
 
@@ -514,7 +611,7 @@ function crearFilaHermano() {
       <label for="gradoHermano_${idSufijo}">Grado actual</label>
       <select id="gradoHermano_${idSufijo}" name="gradosHermanos[]"
               class="hermano-input hermano-grado">
-        <option value="">Seleccione el grado</option>
+        <option value="" disabled selected>Seleccione el grado</option>
         <option value="Primer Año">Primer Año</option>
         <option value="Segundo Año">Segundo Año</option>
         <option value="Tercer Año">Tercer Año</option>
@@ -533,6 +630,9 @@ function crearFilaHermano() {
     inp.addEventListener("input", () => limpiarError(inp));
     inp.addEventListener("change", () => limpiarError(inp));
   });
+  const nombreHermano = fila.querySelector('.hermano-nombre');
+  nombreHermano.pattern = "[\\p{L} '\u2019\\-]+";
+  configurarSelect(fila.querySelector('select'));
 
   return fila;
 }
@@ -558,6 +658,14 @@ function validarHermanos() {
 
   const filas = lista.querySelectorAll(".fila-hermano");
 
+  if (filas.length > MAX_HERMANOS) {
+    if (avisoHermanos) {
+      avisoHermanos.textContent = `Solo puede registrar hasta ${MAX_HERMANOS} hermanos.`;
+      avisoHermanos.style.display = 'block';
+    }
+    return false;
+  }
+
   if (filas.length === 0) {
     if (avisoHermanos) {
       avisoHermanos.textContent = "Agregue al menos un hermano o hermana con el botón “+”.";
@@ -570,13 +678,15 @@ function validarHermanos() {
   filas.forEach((fila) => {
     const nombre = fila.querySelector(".hermano-nombre");
     const gradoH = fila.querySelector(".hermano-grado");
-    const nombreVacio = !nombre.value.trim();
-    const gradoVacio = !gradoH.value.trim();
+    const nombreVacio = !nombre.value.trim() || Boolean(errorNombre(nombre.value, 50));
+    const gradoVacio = !gradoH.value.trim() || !Array.from(gradoH.options).some(o => o.value === gradoH.value && !o.disabled);
+    const clave = normalizarTexto(nombre.value).toLocaleLowerCase('es');
+    const duplicado = Array.from(filas).some(otra => otra !== fila && normalizarTexto(otra.querySelector('.hermano-nombre').value).toLocaleLowerCase('es') === clave);
 
-    if (nombreVacio || gradoVacio) {
+    if (nombreVacio || gradoVacio || duplicado) {
       valido = false;
       fila.classList.add("fila-hermano-invalida");
-      if (nombreVacio) { nombre.style.borderColor = "red"; }
+      if (nombreVacio || duplicado) { nombre.style.borderColor = "red"; }
       if (gradoVacio) { gradoH.style.borderColor = "red"; }
     } else {
       fila.classList.remove("fila-hermano-invalida");
@@ -588,7 +698,7 @@ function validarHermanos() {
   if (avisoHermanos) {
     avisoHermanos.textContent = valido
       ? ""
-      : "Complete el nombre y grado de cada hermano agregado, o elimínelo con el botón “✕”.";
+      : "Revise nombres y grados de los hermanos. No repita al mismo hermano; puede eliminar filas con “✕”.";
     avisoHermanos.style.display = valido ? "none" : "block";
   }
 
@@ -936,7 +1046,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   try {
     colocarFechaHoraActual();
     setInterval(colocarFechaHoraActual, 1000);
-    await generarNumeroFicha();
+    void generarNumeroFicha();
     mostrarPaso(1);
     configurarCamposSalud();
     configurarFoto();
@@ -953,11 +1063,15 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     if (btnSiguiente) {
       btnSiguiente.addEventListener("click", async () => {
-        if (!validarPaso(pasoActual)) return;
+        if (!validarPaso(pasoActual)) {
+          avisarError(mensajeErroresPaso(pasoActual));
+          return;
+        }
 
         if (pasoActual === 1 && nie) {
-          await verificarNieDuplicado();
-          if (nie.dataset.duplicado === "true") {
+          const verificado = await verificarNieDuplicado();
+          if (!verificado) {
+            avisarError(nie.dataset.duplicado === 'true' ? 'Este NIE ya está registrado.' : 'No se pudo verificar el NIE. Intente nuevamente.');
             validarCampo(nie);
             nie.scrollIntoView({ behavior: "smooth", block: "center" });
             nie.focus({ preventScroll: true });
@@ -991,6 +1105,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (grado) grado.addEventListener("change", actualizarDocumentacion);
     if (tipoIngreso) tipoIngreso.addEventListener("change", actualizarDocumentacion);
     actualizarDocumentacion();
+    form.inert = true;
+    try {
+      controladorBorrador = await iniciarBorrador({ form, foto:fotoInput, crearHermano:crearFilaHermano, mostrarPaso, obtenerPaso:() => pasoActual, finalizado:() => guardado });
+      actualizarEstadoBotonesHermanos();
+      todosLosCampos.forEach(el => { if (el.type !== 'file' && el.type !== 'hidden') limpiarError(el); });
+    } finally { form.inert = false; }
 
   } catch (error) {
     console.error("Error al iniciar el formulario:", error);
@@ -1003,6 +1123,18 @@ window.addEventListener("DOMContentLoaded", async () => {
 if (form) {
   form.addEventListener("submit", async function(e) {
     e.preventDefault();
+    if (guardando || guardado) return;
+    guardando = true;
+    if (btnGuardar) btnGuardar.disabled = true;
+    form.setAttribute('aria-busy', 'true');
+    try {
+    calcularEdad();
+    validarSobreedad();
+    actualizarRequeridoDuiEstudiante();
+    form.querySelectorAll('input, textarea').forEach(el => {
+      if (campoAplicable(el) && ['text', 'textarea', 'email'].includes(el.type)) el.value = normalizarTexto(el.value);
+      normalizarCampoEntrada(el);
+    });
 
     const lugar = document.getElementById("lugarNacimiento");
     if (lugar && validarLugarNacimiento(lugar)) {
@@ -1022,7 +1154,7 @@ if (form) {
     let primerPasoInvalido = null;
 
     for (const i of obtenerSecuenciaPasos()) {
-      const ok = validarPaso(i);
+      const ok = validarPaso(i, true);
       if (!ok) {
         formularioValido = false;
         if (!primerPasoInvalido) primerPasoInvalido = i;
@@ -1037,6 +1169,7 @@ if (form) {
         mensajeExito.textContent = "❌ Complete todos los campos obligatorios correctamente.";
         mensajeExito.style.color = "red";
       }
+      avisarError(`No se guardó la matrícula.\n${mensajeErroresPaso(primerPasoInvalido)}`);
       return;
     }
 
@@ -1044,20 +1177,22 @@ if (form) {
       mensajeExito.textContent = "⏳ Verificando NIE…";
       mensajeExito.style.color = "blue";
     }
+    form.inert = true;
 
     const valorNie = nie ? nie.value.trim() : "";
     const nieDuplicado = await nieYaExisteEnBD(valorNie);
 
     if (nieDuplicado) {
       nie.dataset.duplicado = "true";
-      validarCampo(nie);
       mostrarPaso(1);
+      validarCampo(nie);
       nie.scrollIntoView({ behavior: "smooth", block: "center" });
       nie.focus({ preventScroll: true });
       if (mensajeExito) {
         mensajeExito.textContent = "❌ Este NIE ya está registrado. No se puede matricular dos veces con el mismo NIE.";
         mensajeExito.style.color = "red";
       }
+      avisarError('Este NIE ya está registrado. No se guardó otra matrícula.');
       return;
     }
 
@@ -1065,14 +1200,16 @@ if (form) {
     const data = {};
 
     formData.forEach((value, key) => {
-      if (key !== "fotoEstudiante" && key !== "nombresHermanos[]" && key !== "gradosHermanos[]" && value.trim() !== "") {
-        data[key] = value;
+      const campo = form.elements.namedItem(key);
+      if (!['fotoBase64', 'fotoEstudiante', 'nombresHermanos[]', 'gradosHermanos[]'].includes(key) && typeof value === 'string' && campo && campoAplicable(campo) && value.trim() !== '') {
+        data[key] = value.trim();
       }
     });
 
     // Hermanos: se arman como lista de objetos { nombre, grado }
-    const nombresHermanos = formData.getAll("nombresHermanos[]").map(v => v.trim());
-    const gradosHermanos = formData.getAll("gradosHermanos[]").map(v => v.trim());
+    const tieneHermanos = formData.get('hermanosCentroeducativo') === 'Sí';
+    const nombresHermanos = tieneHermanos ? formData.getAll("nombresHermanos[]").map(v => normalizarTexto(v)) : [];
+    const gradosHermanos = tieneHermanos ? formData.getAll("gradosHermanos[]").map(v => v.trim()) : [];
     const hermanos = nombresHermanos
       .map((nombreH, i) => ({ nombre: nombreH, grado: gradosHermanos[i] || "" }))
       .filter(h => h.nombre || h.grado);
@@ -1090,21 +1227,36 @@ if (form) {
     }
 
     data.fechaMatricula = fechaMatricula ? fechaMatricula.textContent : "";
+    data.edad = edad.value;
+    data.correoEstudiantil = `${valorNie}@clases.edu.sv`;
+    data.estadoRevisionEdad = document.getElementById('estadoRevisionEdad')?.value || '';
+    data.fechaCorteEdad = document.getElementById('fechaCorteEdad')?.value || '';
     data.horaMatricula = horaMatricula ? horaMatricula.textContent : "";
     data.numeroFicha = numeroFicha ? numeroFicha.value : "";
     data.estado = "Activo";
     data.fechaRegistro = new Date().toISOString();
 
-    console.log("📤 Datos a guardar:", data);
-
     try {
+      if (!fichaDelAnioSiguiente(data.numeroFicha)) data.numeroFicha = crearFichaAleatoria();
+      if (numeroFicha) numeroFicha.value = data.numeroFicha;
       if (mensajeExito) {
         mensajeExito.textContent = "⏳ Guardando matrícula...";
         mensajeExito.style.color = "blue";
       }
 
-      const docRef = await crearMatricula(data);
-      console.log("✅ Matrícula guardada con ID:", docRef.id);
+      // Solo reintentar una colisión de ficha confirmada por la restricción única.
+      for (let intento = 0; ; intento++) {
+        try { await crearMatricula(data); break; }
+        catch (error) {
+          const colisionFicha = error.code === '23505' && /matricula_ficha_unica|matriculas_numero_ficha_key/.test(`${error.message || ''} ${error.details || ''}`);
+          if (!colisionFicha || intento >= 4) throw error;
+          const anterior = data.numeroFicha;
+          do { data.numeroFicha = crearFichaAleatoria(); } while (data.numeroFicha === anterior);
+          if (numeroFicha) numeroFicha.value = data.numeroFicha;
+        }
+      }
+      guardado = true;
+      await controladorBorrador?.eliminar();
 
       form.querySelectorAll("input, select, textarea, button").forEach((campo) => {
         campo.disabled = true;
@@ -1118,15 +1270,15 @@ if (form) {
       window.scrollTo({ top: 0, behavior: "smooth" });
 
     } catch (error) {
-      console.error("❌ Error al guardar:", error);
-      if (mensajeExito) {
-        mensajeExito.textContent = "❌ Error al guardar: " + error.message;
-        mensajeExito.style.color = "red";
-      }
-
-      if (error.message.includes("Unsupported field value")) {
-        alert("❌ Error con la foto. Por favor, intenta con otra imagen o sin foto.");
-      }
+      avisarError(error.code === '23505' ? 'Ya existe un registro con este NIE, DUI o ficha. Revise los datos antes de reintentar.' : error.code === '23514' ? 'La base de datos rechazó datos inválidos. Revise nombres, teléfonos, correos y documentos.' : 'No se pudo confirmar el guardado. Revise la conexión y verifique el NIE antes de reintentar.');
+    }
+    } catch (error) {
+      avisarError(error.message || 'No se pudo validar la matrícula. Intente nuevamente.');
+    } finally {
+      guardando = false;
+      form.inert = false;
+      form.removeAttribute('aria-busy');
+      if (btnGuardar && !guardado) btnGuardar.disabled = form.dataset.edadBloqueada === 'true';
     }
   });
 }
@@ -1156,18 +1308,10 @@ function colocarFechaHoraActual() {
 /* =========================================================
    GENERAR NÚMERO DE FICHA
 ========================================================= */
-async function generarNumeroFicha() {
+function generarNumeroFicha() {
   if (!numeroFicha) return;
 
-  try {
-    numeroFicha.value = await obtenerSiguienteFicha();
-    console.log("📝 Número de ficha generado:", numeroFicha.value);
-  } catch (error) {
-    console.error("Error generando número de ficha:", error);
-    const timestamp = Date.now().toString().slice(-4);
-    const anio = new Date().getFullYear();
-    numeroFicha.value = `FIC-${anio}-${timestamp}`;
-  }
+  numeroFicha.value = crearFichaAleatoria();
 }
 
 /* =========================================================
@@ -1347,6 +1491,7 @@ function mostrarPaso(paso) {
 
   pasoActual = paso;
   actualizarBarraProgreso(paso);
+  form.dispatchEvent(new Event('cambiopaso'));
 
   if (paso === 6) {
     actualizarDocumentacion();
@@ -1404,11 +1549,13 @@ function configurarTema() {
     boton.querySelector(".icono-tema").textContent = oscuro ? "☀️" : "🌙";
     boton.querySelector(".texto-tema").textContent = oscuro ? "Tema claro" : "Tema oscuro";
   };
-  aplicar(localStorage.getItem("temaMatricula") === "oscuro");
+  try { aplicar(localStorage.getItem("temaMatricula") === "oscuro"); }
+  catch { aplicar(false); }
   boton.addEventListener("click", () => {
     const oscuro = !document.body.classList.contains("tema-oscuro");
     aplicar(oscuro);
-    localStorage.setItem("temaMatricula", oscuro ? "oscuro" : "claro");
+    try { localStorage.setItem("temaMatricula", oscuro ? "oscuro" : "claro"); }
+    catch { /* El tema sigue funcionando aunque el navegador bloquee el almacenamiento. */ }
   });
 }
 
@@ -1427,15 +1574,39 @@ camposTelefono.forEach(id => {
   const campo = document.getElementById(id);
   if (!campo) return;
 
+  campo.setAttribute('inputmode', 'numeric');
+  const celular = ['whatsappResponsable', 'madreCelular', 'padreCelular'].includes(id);
+  campo.title = celular ? 'Celular salvadoreño: 8 dígitos, comienza con 5, 6 o 7.' : 'Teléfono salvadoreño: 8 dígitos, comienza con 2, 5, 6 o 7.';
+  campo.addEventListener('beforeinput', e => {
+    // Permitir números ya formateados desde autocompletado; el guion manual se agrega automáticamente.
+    const permitido = e.data && (/^[0-9]+$/u.test(e.data) || (e.data.length > 1 && /^[0-9\s-]+$/u.test(e.data)));
+    if (e.inputType.startsWith('insert') && e.data && !permitido) e.preventDefault();
+  });
+  campo.addEventListener('paste', e => {
+    e.preventDefault();
+    const texto = e.clipboardData?.getData('text') || '';
+    if (/[^0-9\s-]/u.test(texto)) return;
+    campo.setRangeText(texto.replace(/\D/g, ''), campo.selectionStart, campo.selectionEnd, 'end');
+    campo.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   campo.addEventListener("input", function () {
-    let numeros = this.value.replace(/\D/g, "");
-    numeros = numeros.substring(0, 8);
-    if (numeros.length > 4) {
-      numeros = numeros.substring(0, 4) + "-" + numeros.substring(4);
-    }
-    this.value = numeros;
+    validarCampo(this);
   });
 });
+
+function formatearTelefonoEntrada(campo) {
+  const cursor = campo.selectionStart;
+  const digitosAntes = campo.value.slice(0, cursor ?? campo.value.length).replace(/\D/g, '').length;
+  const numeros = campo.value.replace(/\D/g, '').slice(0, 8);
+  const valor = numeros.length > 4 ? numeros.slice(0, 4) + '-' + numeros.slice(4) : numeros;
+  if (campo.value !== valor) {
+    campo.value = valor;
+    if (cursor !== null) {
+      const posicion = Math.min(valor.length, digitosAntes + (digitosAntes > 4 ? 1 : 0));
+      campo.setSelectionRange(posicion, posicion);
+    }
+  }
+}
 
 /* ============================================================
    VALIDACIÓN Y FORMATO DE DUI
@@ -1503,12 +1674,11 @@ function configurarCampoSoloLetras(id, maxLongitud) {
   if (!campo) return;
 
   if (maxLongitud) campo.setAttribute("maxlength", String(maxLongitud));
+  campo.pattern = "[\\p{L} '\u2019\\-]+";
 
   campo.addEventListener("input", function () {
-    let valor = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, "");
-    if (maxLongitud) valor = valor.slice(0, maxLongitud);
-    this.value = valor;
     capitalizarEnVivo(this);
+    validarCampo(this);
   });
 
   campo.addEventListener("blur", function () {
@@ -1519,7 +1689,7 @@ function configurarCampoSoloLetras(id, maxLongitud) {
   });
 }
 
-camposLetraCortos.forEach(id => configurarCampoSoloLetras(id, 10));
+camposLetraCortos.forEach(id => configurarCampoSoloLetras(id, 12));
 camposLetraLargos.forEach(id => configurarCampoSoloLetras(id, 50));
 camposSoloLetras.forEach(id => configurarCampoSoloLetras(id, null));
 

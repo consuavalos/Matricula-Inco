@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Formulario de Matrícula INCO - Nuevo ingreso</title>
-  <link rel="stylesheet" href="nuevo_ingreso.css" />
+  <link rel="stylesheet" href="nuevo_ingreso.css?v=2" />
   <style>
     /* ===== Estilos para la sección de Hermanos (dinámica) ===== */
     #bloqueHermanos {
@@ -317,9 +317,9 @@
         <div class="grid-2">
           <div class="campo">
             <label for="nie">NIE</label>
-            <input type="text" id="nie" name="nie" required inputmode="numeric" maxlength="9" pattern="[0-9]+"
+            <input type="text" id="nie" name="nie" required inputmode="numeric" maxlength="12" pattern="[0-9]{1,12}"
                    placeholder="000000000" title="El NIE solo debe contener números,
-                   Debe contener maximo 9 números en formato 000000000" />
+                   Debe contener hasta 12 dígitos" />
           </div>
           <div class="campo">
             <label for="duiEstudiante">DUI del estudiante (opcional)</label>
@@ -330,30 +330,30 @@
           <div class="campo">
             <label for="primerApellido">Primer apellido</label>
             <input type="text" id="primerApellido" name="primerApellido" required
-                   maxlength="10"
+                   maxlength="12"
                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
-                   title="Solo se permiten letras y espacios (máximo 10 caracteres)" />
+                   title="Solo se permiten letras y espacios (máximo 12 caracteres)" />
           </div>
           <div class="campo">
             <label for="segundoApellido">Segundo apellido</label>
             <input type="text" id="segundoApellido" name="segundoApellido" required
-                   maxlength="10"
+                   maxlength="12"
                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
-                   title="Solo se permiten letras y espacios (máximo 10 caracteres)" />
+                   title="Solo se permiten letras y espacios (máximo 12 caracteres)" />
           </div>
           <div class="campo">
             <label for="primerNombre">Primer nombre</label>
             <input type="text" id="primerNombre" name="primerNombre" required
-                   maxlength="10"
+                   maxlength="12"
                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
-                   title="Solo se permiten letras y espacios (máximo 10 caracteres)" />
+                   title="Solo se permiten letras y espacios (máximo 12 caracteres)" />
           </div>
           <div class="campo">
             <label for="segundoNombre">Segundo nombre</label>
             <input type="text" id="segundoNombre" name="segundoNombre" required
-                   maxlength="10"
+                   maxlength="12"
                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
-                   title="Solo se permiten letras y espacios (máximo 10 caracteres)" />
+                   title="Solo se permiten letras y espacios (máximo 12 caracteres)" />
           </div>
 
            <div class="campo">
@@ -375,7 +375,7 @@
   <div class="campo">
     <label for="grado">Año / Grado que cursará</label>
     <select id="grado" name="grado" required>
-      <option value="">¿Qué año o grado cursará?</option>
+      <option value="" disabled selected>¿Qué año o grado cursará?</option>
       <option value="Primer Año">Primer Año</option>
       <option value="Segundo Año">Segundo Año</option>
       <option value="Tercer Año">Tercer Año</option>
@@ -391,7 +391,7 @@
           <div class="campo">
             <label for="sexo">Sexo</label>
             <select id="sexo" name="sexo" required>
-              <option value="">¿Cuál es su sexo?</option>
+              <option value="" disabled selected>¿Cuál es su sexo?</option>
               <option>Femenino</option>
               <option>Masculino</option>
             </select>
@@ -425,7 +425,7 @@
   name="correoPersonal"
   required
   placeholder="ejemplo@correo.com"
-  pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+  pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
   title="Ingrese un correo electrónico válido con arroba (@), por ejemplo: ejemplo@correo.com" />
           </div>
         </div>
@@ -472,7 +472,7 @@
           <div class="campo">
             <label for="especialidad">Especialidad / Bachillerato</label>
             <select id="especialidad" name="especialidad" required>
-              <option value="">¿Qué especialidad o bachillerato cursará?</option>
+              <option value="" disabled selected>¿Qué especialidad o bachillerato cursará?</option>
               <option value="Bachillerato General">Bachillerato General</option>
               <option value="Administrativo Contable">Administrativo Contable</option>
               <option value="Servicios Turísticos">Servicios Turísticos</option>
@@ -482,7 +482,7 @@
           <div class="campo">
             <label for="ultimoAnioAprobado">Último año aprobado</label>
             <select id="ultimoAnioAprobado" name="ultimoAnioAprobado" required>
-              <option value="">¿Cuál fue el último año aprobado?</option>
+              <option value="" disabled selected>¿Cuál fue el último año aprobado?</option>
               <option value="Noveno Grado">Noveno Grado</option>
               <option value="Primer Año">Primer Año</option>
               <option value="Segundo Año">Segundo Año</option>
@@ -496,7 +496,7 @@
           <div class="campo">
             <label for="tipoIngreso">Tipo de ingreso</label>
             <select id="tipoIngreso" name="tipoIngreso" required>
-              <option value="">¿El estudiante es de nuevo ingreso o antiguo ingreso?</option>
+              <option value="" disabled selected>¿El estudiante es de nuevo ingreso o antiguo ingreso?</option>
               <option value="Nuevo ingreso">Nuevo ingreso</option>
               <option value="Antiguo ingreso">Antiguo ingreso</option>
             </select>
@@ -507,7 +507,7 @@
           <div class="campo">
             <label for="hermanosCentroeducativo">¿Tiene hermanos en este Centro Educativo?</label>
             <select id="hermanosCentroeducativo" name="hermanosCentroeducativo" required>
-              <option value="">¿Tiene hermanos en este Centro Educativo?</option>
+              <option value="" disabled selected>¿Tiene hermanos en este Centro Educativo?</option>
               <option value="Sí">Sí</option>
               <option value="No">No</option>
             </select>
@@ -536,7 +536,7 @@
           <div class="campo">
             <label for="computadoraMineducyt">¿Posee computadora MINEDUCYT?</label>
             <select id="computadoraMineducyt" name="computadoraMineducyt" required>
-              <option value="">¿Posee computadora MINEDUCYT?</option>
+              <option value="" disabled selected>¿Posee computadora MINEDUCYT?</option>
               <option value="Sí">Sí</option>
               <option value="No">No</option>
             </select>
@@ -545,7 +545,7 @@
           <div class="campo">
             <label for="internet">¿Posee acceso a internet?</label>
             <select id="internet" name="internet" required>
-              <option value="">¿Posee acceso a internet?</option>
+              <option value="" disabled selected>¿Posee acceso a internet?</option>
               <option value="Sí">Sí</option>
               <option value="No">No</option>
             </select>
@@ -554,7 +554,7 @@
           <div class="campo" id="campoCamisa">
   <label for="tallaCamisa">Talla Camisa</label>
   <select id="tallaCamisa" name="tallaCamisa" required>
-    <option value="">Seleccione talla</option>
+    <option value="" disabled selected>Seleccione talla</option>
     <option value="XS">XS</option>
     <option value="S">S</option>
     <option value="M">M</option>
@@ -567,7 +567,7 @@
 <div class="campo" id="campoPantalon">
   <label for="tallaPantalon">Talla Pantalón</label>
   <select id="tallaPantalon" name="tallaPantalon" required>
-    <option value="">Seleccione talla</option>
+    <option value="" disabled selected>Seleccione talla</option>
     <option value="XS">XS</option>
     <option value="S">S</option>
     <option value="M">M</option>
@@ -580,7 +580,7 @@
 <div class="campo" id="campoBlusa">
   <label for="tallaBlusa">Talla Blusa</label>
   <select id="tallaBlusa" name="tallaBlusa" required>
-    <option value="">Seleccione talla</option>
+    <option value="" disabled selected>Seleccione talla</option>
     <option value="XS">XS</option>
     <option value="S">S</option>
     <option value="M">M</option>
@@ -593,7 +593,7 @@
 <div class="campo" id="campoFalda">
   <label for="tallaFalda">Talla Falda</label>
   <select id="tallaFalda" name="tallaFalda" required>
-    <option value="">Seleccione talla</option>
+    <option value="" disabled selected>Seleccione talla</option>
     <option value="XS">XS</option>
     <option value="S">S</option>
     <option value="M">M</option>
@@ -606,7 +606,7 @@
 <div class="campo">
   <label for="tallaZapatos">Talla zapatos</label>
   <select id="tallaZapatos" name="tallaZapatos" required>
-    <option value="">Seleccione talla</option>
+    <option value="" disabled selected>Seleccione talla</option>
     <!-- 30 a 45 -->
     <option value="30">30</option>
     <option value="31">31</option>
@@ -634,7 +634,7 @@
           <div class="campo">
             <label for="tipoTransporte">Tipo de transporte que utiliza</label>
             <select id="tipoTransporte" name="tipoTransporte" required>
-              <option value="">¿Qué transporte utiliza?</option>
+              <option value="" disabled selected>¿Qué transporte utiliza?</option>
               <option value="Peatonal">Peatonal</option>
               <option value="Público">Público</option>
               <option value="Privado">Privado</option>
@@ -653,7 +653,7 @@
           <div class="campo">
             <label for="zonaResidencia">Zona de residencia</label>
             <select id="zonaResidencia" name="zonaResidencia" required>
-              <option value="">¿Cuál es su zona de residencia?</option>
+              <option value="" disabled selected>¿Cuál es su zona de residencia?</option>
               <option value="Urbana">Urbana</option>
               <option value="Rural">Rural</option>
             </select>
@@ -662,7 +662,7 @@
           <div class="campo">
             <label for="conQuienVive">¿Con quién vive?</label>
             <select id="conQuienVive" name="conQuienVive" required>
-              <option value="">¿Con quién vive?</option>
+              <option value="" disabled selected>¿Con quién vive?</option>
               <option value="Madre">Madre</option>
               <option value="Padre">Padre</option>
               <option value="Ambos">Ambos</option>
@@ -683,7 +683,7 @@
           <div class="campo campo-full">
             <label for="direccionResidencia">Dirección de residencia</label>
             <input type="text" id="direccionResidencia" name="direccionResidencia" required
-                   maxlength="30" placeholder="Dirección completa (máx. 30 caracteres)" />
+                   minlength="10" maxlength="50" placeholder="Ej. Cantón El Zapote, calle principal, casa 12" />
           </div>
         </div>
       </section>
@@ -697,7 +697,7 @@
           <div class="campo">
             <label for="enfermedad">¿Padece alguna enfermedad?</label>
             <select id="enfermedad" name="enfermedad" required>
-              <option value="">¿Padece alguna enfermedad?</option>
+              <option value="" disabled selected>¿Padece alguna enfermedad?</option>
               <option value="Sí">Sí</option>
               <option value="No">No</option>
             </select>
@@ -729,7 +729,7 @@
 <div class="campo">
     <label for="parentesco">Parentesco</label>
     <select id="parentesco" name="parentesco" required>
-        <option value="">¿Cuál es el parentesco del responsable?</option>
+        <option value="" disabled selected>¿Cuál es el parentesco del responsable?</option>
         <option value="Mamá">Mamá</option>
         <option value="Papá">Papá</option>
         <option value="Tío">Tío</option>
@@ -775,15 +775,15 @@
     title="Ingrese 8 números; puede escribirlos con o sin guion"/>
 </div>
 <div class="campo">
-  <label for="correoResponsable">Correo electrónico del responsable (@gmail.com)</label>
+  <label for="correoResponsable">Correo electrónico del responsable</label>
   <input
     type="email"
     id="correoResponsable"
     name="correoResponsable"
     required
     placeholder="usuario@gmail.com"
-    pattern="[a-zA-Z0-9._%+-]+@gmail\.com"
-    title="Debe ser un correo @gmail.com, por ejemplo: usuario@gmail.com"/>
+    pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
+    title="Ingrese un correo válido de Gmail, Yahoo, Outlook u otro proveedor"/>
 </div>
         </div>
     </section>
@@ -805,7 +805,7 @@
           </div>
           <div class="campo">
             <label for="madreOcupacion">Ocupación</label>
-            <input type="text" id="madreOcupacion" name="madreOcupacion" required />
+            <input type="text" id="madreOcupacion" name="madreOcupacion" required list="ocupacionesComunes" maxlength="150" placeholder="Seleccione o escriba otra ocupación" />
           </div>
           <div class="campo">
             <label for="madreLugarTrabajo">Lugar de trabajo</label>
@@ -854,7 +854,7 @@
           </div>
           <div class="campo">
             <label for="padreOcupacion">Ocupación</label>
-            <input type="text" id="padreOcupacion" name="padreOcupacion" required />
+            <input type="text" id="padreOcupacion" name="padreOcupacion" required list="ocupacionesComunes" maxlength="150" placeholder="Seleccione o escriba otra ocupación" />
           </div>
           <div class="campo">
             <label for="padreLugarTrabajo">Lugar de trabajo</label>
@@ -931,8 +931,8 @@
         <button type="submit" id="btnGuardar" class="btn-guardar btn-finalizar">Guardar matrícula</button>
       </div>
 
-      <p id="mensajeExito" class="mensaje-exito"></p>
-    </form>
+      <p id="mensajeExito" role="status" aria-live="polite" class="mensaje-exito"></p>
+    <datalist id="ocupacionesComunes"><option value="Ama de casa"></option><option value="Comerciante"></option><option value="Empleado"></option><option value="Agricultor"></option><option value="Albañil"></option><option value="Carpintero"></option><option value="Mecánico"></option><option value="Electricista"></option><option value="Motorista"></option><option value="Cocinero"></option><option value="Docente"></option><option value="Enfermero"></option><option value="Contador"></option><option value="Servicios de limpieza"></option><option value="Trabajo independiente"></option><option value="Estudiante"></option><option value="Jubilado"></option><option value="Sin empleo"></option></datalist></form>
 
     <!-- ============================================================ -->
     <!-- PANEL FINAL – COMPROBANTE DE MATRÍCULA                       -->
@@ -969,7 +969,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- Recuerda cambiar el v=5 por v=6 para forzar la recarga -->
-  <script type="module" src="nuevo_ingreso.js?v=6"></script>
+  <script type="module" src="nuevo_ingreso.js?v=12"></script>
 
 </body>
 </html>

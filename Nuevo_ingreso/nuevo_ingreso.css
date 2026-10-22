@@ -38,6 +38,68 @@
   white-space: nowrap;
 }
 
+/* Colores compartidos por los dos temas; no modifican las reglas del formulario. */
+@media screen {
+  body {
+    color-scheme: light;
+    --superficie-ayuda: #f2f7f4;
+    --borde-ayuda: #b6cec2;
+    --texto-ayuda: #364f43;
+    --titulo-ayuda: #215b40;
+    --etiqueta-ayuda: #dfede5;
+    --error-visible: #b42318;
+  }
+  body.tema-oscuro {
+    color-scheme: dark;
+    --superficie-ayuda: #182a22;
+    --borde-ayuda: #587366;
+    --texto-ayuda: #e7f3ed;
+    --titulo-ayuda: #a0e6bb;
+    --etiqueta-ayuda: #274b38;
+    --error-visible: #ff9b93;
+  }
+  body .documentacion-box,
+  body .foto-recomendaciones {
+    background: var(--superficie-ayuda);
+    color: var(--texto-ayuda);
+    border-color: var(--borde-ayuda);
+  }
+  body .documentacion-box h4,
+  body .foto-recomendaciones h4,
+  body .foto-recomendaciones-grupo strong { color: var(--titulo-ayuda); }
+  body .documentacion-box li,
+  body .documentacion-placeholder,
+  body .foto-recomendaciones-grupo p,
+  body #estadoBorrador { color: var(--texto-ayuda); }
+  body .documentacion-etiqueta {
+    background: var(--etiqueta-ayuda);
+    color: var(--titulo-ayuda);
+  }
+  body.tema-oscuro .error-mensaje,
+  body.tema-oscuro .error,
+  body .error-mensaje,
+  body .error,
+  body #avisoHermanosVacio { color: var(--error-visible) !important; }
+  body .campo.campo-invalido input,
+  body .campo.campo-invalido select,
+  body .campo.campo-invalido textarea {
+    border-color: var(--error-visible) !important;
+    box-shadow: 0 0 0 2px var(--error-visible) !important;
+  }
+  body .mensaje-exito { color: var(--texto-ayuda) !important; }
+  body .mensaje-exito[role="alert"] { color: var(--error-visible) !important; }
+  body .lista-sugerencias,
+  body .lista-sugerencias .item-sugerencia {
+    background: var(--superficie-ayuda) !important;
+    color: var(--texto-ayuda) !important;
+    border-color: var(--borde-ayuda) !important;
+  }
+  body .lista-sugerencias .item-sugerencia:hover {
+    background: var(--etiqueta-ayuda) !important;
+    color: var(--titulo-ayuda) !important;
+  }
+}
+
 /* ---------- RESET ---------- */
 * {
   margin: 0;
