@@ -1,0 +1,113 @@
+/* Acta de condicionamiento: datos centrados y autollenado en azul */
+#actaCondicionamiento input {
+  text-align: center;
+  max-width: 100%;
+}
+
+/* Lo que se llena automáticamente desde la matrícula */
+#actaCondicionamiento input.auto-llenado {
+  color: #0b3fd1;
+  font-weight: 600;
+}
+
+/* ============================================================
+   IMPRESIÓN: una sola hoja tamaño carta, letra legible
+   ============================================================ */
+@page {
+  size: letter portrait;        /* 8.5 x 11 pulgadas */
+  margin: 12mm 15mm;
+}
+
+@media print {
+  html, body {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Solo se imprime el acta */
+  .no-imprimir,
+  .barra,
+  .consulta-matriculas,
+  #fichaConsulta {
+    display: none !important;
+  }
+
+  .vista-acta {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  #actaCondicionamiento.hoja-carta {
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    font-size: 10.5pt !important;     /* legible */
+    line-height: 1.28 !important;
+    color: #000;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    page-break-after: avoid;
+  }
+
+  #actaCondicionamiento p,
+  #actaCondicionamiento ol,
+  #actaCondicionamiento li {
+    font-size: inherit !important;
+    line-height: inherit !important;
+  }
+  #actaCondicionamiento p { margin: 0 0 2.5mm !important; }
+  #actaCondicionamiento ol { margin: 0 0 2.5mm !important; padding-left: 7mm !important; }
+  #actaCondicionamiento li { margin: 0 0 0.8mm !important; }
+
+  /* Encabezado compacto */
+  #actaCondicionamiento .encabezado-acta {
+    margin: 0 0 3mm !important;
+    gap: 5mm !important;
+  }
+  #actaCondicionamiento .encabezado-acta img { height: 18mm !important; width: auto !important; }
+  #actaCondicionamiento .encabezado-acta h1 { font-size: 16pt !important; margin: 0 !important; }
+  #actaCondicionamiento .encabezado-acta h2 { font-size: 12pt !important; margin: 1mm 0 0 !important; }
+
+  /* Campos como líneas de texto, sin cajas */
+  #actaCondicionamiento input {
+    font: inherit !important;
+    font-size: 10.5pt !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    border: 0 !important;
+    border-bottom: 0.3mm solid #000 !important;
+    border-radius: 0 !important;
+    padding: 0 1mm !important;
+    height: auto !important;
+    color: #000;
+  }
+  #actaCondicionamiento input.auto-llenado {
+    color: #0b3fd1 !important;
+    font-weight: 600;
+  }
+
+  /* Firmas: más juntas para que todo quepa */
+  #actaCondicionamiento .cierre { margin: 3mm 0 12mm !important; }
+  #actaCondicionamiento .firmas-coordinacion,
+  #actaCondicionamiento .firmas-finales {
+    margin-top: 10mm !important;
+    gap: 8mm !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  #actaCondicionamiento .firma { width: 62mm !important; }
+}
