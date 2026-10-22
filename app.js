@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const btnMatricula = document.getElementById('btnMatricula');
+    if (btnMatricula) {
+        btnMatricula.addEventListener('click', function () {
+            window.location.href = './Nuevo_ingreso/nuevo_ingreso.html';
+        });
+    }
 
     // =====================================================
     // BOTONES PRINCIPALES

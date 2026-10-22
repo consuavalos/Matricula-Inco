@@ -6,6 +6,7 @@
   <title>Coordinación - INCO</title>
   <link rel="stylesheet" href="coordinador.css">
   <link rel="stylesheet" href="../ficha-oficial.css">
+  <link rel="stylesheet" href="acta-autollenado.css">
 </head>
 <body>
   <header class="barra no-imprimir">
@@ -26,7 +27,9 @@
     <form id="buscarMatriculaCoordinador">
       <label for="nieConsulta">NIE del estudiante</label>
       <div class="controles-consulta">
-        <input id="nieConsulta" type="text" required autocomplete="off">
+        <!-- Solo números, máximo 12 dígitos -->
+        <input id="nieConsulta" type="text" inputmode="numeric" pattern="[0-9]{1,12}" maxlength="12"
+               title="Solo números, máximo 12 dígitos" required autocomplete="off">
         <button type="submit" id="botonConsulta" disabled>Buscar matrícula</button>
       </div>
     </form>
@@ -39,23 +42,23 @@
         <img src="../img/Escudo-inc.png" alt="Escudo del Instituto Nacional de Comercio">
         <div>
           <h1>Instituto Nacional de Comercio</h1>
-          <h2>ACTA DE CONDICIONAMIENTO 202<input class="anio" aria-label="Año" maxlength="1">____</h2>
+          <h2>ACTA DE CONDICIONAMIENTO 202<input id="actaAnioTitulo" class="anio" aria-label="Año" maxlength="1"></h2>
         </div>
       </header>
 
       <p class="motivos">
-        Nuevo Ingreso <input> &nbsp; Repitencia <input> &nbsp; Rendimiento Académico <input>
-        &nbsp; Conducta <input> &nbsp; Sobre edad <input>
+        Nuevo Ingreso <input id="actaNuevoIngreso" maxlength="1"> &nbsp; Repitencia <input id="actaRepitencia" maxlength="1"> &nbsp; Rendimiento Académico <input id="actaRendimiento" maxlength="1">
+        &nbsp; Conducta <input id="actaConducta" maxlength="1"> &nbsp; Sobre edad <input id="actaSobreEdad" maxlength="1">
       </p>
 
       <p>
         Reunidos en la oficina administrativa que ocupa la Coordinación Disciplinaria y de Convivencia Escolar del Instituto
-        Nacional de Comercio de San Salvador, a los <input class="linea-corta"> días del mes de <input class="linea-media">
-        del año <input class="linea-corta">, por lo que YO <input class="linea-larga"> responsable del estudiante con número de
-        Documento Único de Identidad (DUI) <input class="linea-media">, siendo su Padre <input class="linea-corta"> Madre
-        <input class="linea-corta"> Encargado/a <input class="linea-media"> (si no es padre ni madre favor indicar el parentesco con el estudiante)
-        <input class="linea-media"> del/la alumno/a: <input class="linea-larga">, del Bachillerato <input class="linea-media">
-        Sección <input class="linea-corta">;
+        Nacional de Comercio de San Salvador, a los <input id="actaDia" class="linea-corta"> días del mes de <input id="actaMes" class="linea-media">
+        del año <input id="actaAnio" class="linea-corta">, por lo que YO <input id="actaEncargado" class="linea-larga"> responsable del estudiante con número de
+        Documento Único de Identidad (DUI) <input id="actaDui" class="linea-media" maxlength="10">, siendo su Padre <input id="actaPadre" class="linea-corta" maxlength="1"> Madre
+        <input id="actaMadre" class="linea-corta" maxlength="1"> Encargado/a <input id="actaEncargadoMarca" class="linea-media"> (si no es padre ni madre favor indicar el parentesco con el estudiante)
+        <input id="actaParentesco" class="linea-media"> del/la alumno/a: <input id="actaAlumno" class="linea-larga">, del Bachillerato <input id="actaBachillerato" class="linea-media">
+        Sección <input id="actaSeccion" class="linea-corta">;
         <strong>ACEPTO EL CONDICIONAMIENTO Y ME COMPROMETO JUNTO A MI HIJO/A</strong> a cumplir lo requerido en la presente acta,
         lo cual consiste en que si mi hijo/a <strong>REPRUEBA TRES O MÁS MATERIAS O PRESENTA FALTAS DISCIPLINARIAS</strong>
         contempladas en el <strong>MANUAL DE CONVIVENCIA</strong>, inmediatamente se le comunicará a la madre, padre y/o encargado/a,
@@ -82,8 +85,8 @@
       </section>
 
       <section class="firmas-finales">
-        <div><strong>ENCARGADO</strong><br><br>F: <input class="firma"><br>DUI: <input class="firma"></div>
-        <div><strong>ESTUDIANTE</strong><br><br>F: <input class="firma"><br>DUI: <input class="firma"></div>
+        <div><strong>ENCARGADO</strong><br><br>F: <input id="actaFirmaEncargado" class="firma"><br>DUI: <input id="actaDuiFirmaEncargado" class="firma" maxlength="10"></div>
+        <div><strong>ESTUDIANTE</strong><br><br>F: <input id="actaFirmaEstudiante" class="firma"><br>DUI: <input id="actaDuiFirmaEstudiante" class="firma" maxlength="10"></div>
       </section>
     </form>
   </main>

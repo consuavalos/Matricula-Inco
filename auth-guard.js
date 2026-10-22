@@ -4,7 +4,7 @@ async function protegerRuta(rolRequerido) {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
   if (sessionError || !session?.user) {
-    window.location.replace("../index.html");
+    window.location.replace("../administrador.html");
     return false;
   }
 
@@ -15,7 +15,7 @@ async function protegerRuta(rolRequerido) {
     .single();
 
   if (perfilError || !perfil || perfil.rol !== rolRequerido) {
-    window.location.replace("../index.html");
+    window.location.replace("../administrador.html");
     return false;
   }
 
@@ -30,7 +30,7 @@ async function cerrarSesionSupabase() {
   sessionStorage.removeItem("rolUsuario");
   sessionStorage.removeItem("nombreUsuario");
   sessionStorage.removeItem("correoUsuario");
-  window.location.replace("../index.html");
+  window.location.replace("../administrador.html");
 }
 
 export { protegerRuta, cerrarSesionSupabase };

@@ -1,3 +1,4 @@
+import { iniciarBuscadorNacimiento, validarLugarNacimiento } from './buscador-nacimiento.js';
 import {
   crearMatricula,
   nieYaExiste,
@@ -8,6 +9,7 @@ import {
    REFERENCIAS
 ========================================================= */
 const form = document.getElementById("matriculaForm");
+iniciarBuscadorNacimiento();
 const mensajeExito = document.getElementById("mensajeExito");
 
 const numeroFicha = document.getElementById("numeroFicha");
@@ -25,7 +27,6 @@ const enfermedad = document.getElementById("enfermedad");
 const conQuienVive = document.getElementById("conQuienVive");
 const conQuienViveOtro = document.getElementById("conQuienViveOtro");
 const campoConQuienViveOtro = document.getElementById("campoConQuienViveOtro");
-const avisoSinPadres = document.getElementById("avisoSinPadres");
 const bloqueDatosMadre = document.getElementById("bloqueDatosMadre");
 const bloqueDatosPadre = document.getElementById("bloqueDatosPadre");
 
@@ -45,20 +46,36 @@ function mostrarComprobanteMatricula(data) {
   const nombre = [data.primerNombre, data.segundoNombre, data.primerApellido, data.segundoApellido]
     .filter(Boolean)
     .join(" ");
+
   const campos = [
     ["Número de ficha", data.numeroFicha],
     ["NIE", data.nie],
     ["Estudiante", nombre],
     ["Grado", data.grado],
     ["Especialidad", data.especialidad],
+    ["Tipo de ingreso", data.tipoIngreso],
     ["Fecha de matrícula", data.fechaMatricula],
     ["Hora", data.horaMatricula],
   ];
+
+  // Datos del encargado/a: si el parentesco es Mamá o Papá, se muestra
+  // además el nombre registrado en los datos de la madre/padre.
+  const parentesco = data.parentesco || "";
+  let etiquetaResponsable = "Responsable";
+  if (parentesco === "Mamá") etiquetaResponsable = "Responsable (Madre)";
+  else if (parentesco === "Papá") etiquetaResponsable = "Responsable (Padre)";
+  else if (parentesco) etiquetaResponsable = `Responsable (${parentesco})`;
+
+  campos.push([etiquetaResponsable, data.responsable]);
+  if (data.telefonoResponsable) campos.push(["Teléfono del responsable", data.telefonoResponsable]);
+  if (data.correoResponsable) campos.push(["Correo del responsable", data.correoResponsable]);
+
   const destino = document.getElementById("datosComprobante");
   if (destino) {
-    destino.innerHTML = campos.map(([etiqueta, valor]) =>
-      `<div><dt>${etiqueta}</dt><dd>${valor || "-"}</dd></div>`
-    ).join("");
+    destino.innerHTML = campos
+      .filter(([, valor]) => valor)
+      .map(([etiqueta, valor]) => `<div><dt>${etiqueta}</dt><dd>${valor}</dd></div>`)
+      .join("");
   }
 }
 
@@ -66,19 +83,53 @@ window.imprimirComprobanteMatricula = function () {
   window.print();
 };
 
+window.descargarComprobantePDF = function () {
+  const elemento = document.getElementById("comprobanteImprimible");
+  if (!elemento) return;
+
+  if (typeof html2pdf === "undefined") {
+    alert("No se pudo cargar el generador de PDF (revise su conexión a internet). Puede usar el botón Imprimir y elegir “Guardar como PDF”.");
+    return;
+  }
+
+  // Corrige el PDF en blanco: si la página está desplazada (scroll),
+  // html2canvas captura el área equivocada. Se sube al tope antes de generar.
+  window.scrollTo(0, 0);
+
+  const fichaInput = document.getElementById("numeroFicha");
+  const nombreArchivo = `Comprobante-Matricula-${(fichaInput && fichaInput.value) || "INCO"}.pdf`;
+
+  const opciones = {
+    margin: 10,
+    filename: nombreArchivo,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      scrollX: 0,
+      scrollY: 0
+    },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  };
+
+  setTimeout(() => {
+    html2pdf().set(opciones).from(elemento).save();
+  }, 50);
+};
+
 window.volverInicioMatricula = function () {
   window.location.replace("../index.html");
 };
 
 /* =========================================================
-   VALIDACIÓN POR CAMPO (mensajes en vivo + bloqueo de avance)
+   VALIDACIÓN POR CAMPO
 ========================================================= */
 const mensajesPersonalizados = {
   nie: "El NIE debe contener solo números (máximo 9 dígitos).",
   duiEstudiante: "Formato requerido: 00000000-0.",
   lugarNacimiento: "Ingrese el lugar de nacimiento del estudiante.",
   tipoTransporte: "Seleccione el tipo de transporte que utiliza.",
-  distanciaKm: "Ingrese la distancia en kilómetros hasta la institución.",
   zonaResidencia: "Seleccione la zona de residencia.",
   conQuienVive: "Seleccione con quién vive el estudiante.",
   conQuienViveOtro: "Especifique con quién vive el estudiante.",
@@ -93,18 +144,18 @@ const mensajesPersonalizados = {
   correoEstudiantil: "Escriba solo números; el dominio @clases.edu.sv se agrega automáticamente.",
   correoPersonal: "Ingrese un correo electrónico válido con arroba (@).",
   grado: "Seleccione el grado que cursará.",
+  tipoIngreso: "Indique si el estudiante es de nuevo ingreso o antiguo ingreso.",
   especialidad: "Seleccione la especialidad o bachillerato.",
   ultimoAnioAprobado: "Seleccione el último año aprobado.",
   colegioAnterior: "Ingrese el nombre del centro educativo anterior.",
   hermanosCentroeducativo: "Indique si tiene hermanos en el centro educativo.",
-  nombresHermanos: "Ingrese el nombre del hermano o hermana (solo letras).",
   computadoraMineducyt: "Indique si posee computadora MINEDUCYT.",
   internet: "Indique si posee acceso a internet.",
-  tallaZapatos: "Ingrese la talla de zapatos.",
-  tallaCamisa: "Ingrese la talla de camisa.",
-  tallaPantalon: "Ingrese la talla de pantalón.",
-  tallaBlusa: "Ingrese la talla de blusa.",
-  tallaFalda: "Ingrese la talla de falda.",
+  tallaZapatos: "Seleccione la talla de zapatos.",
+  tallaCamisa: "Seleccione la talla de camisa.",
+  tallaPantalon: "Seleccione la talla de pantalón.",
+  tallaBlusa: "Seleccione la talla de blusa.",
+  tallaFalda: "Seleccione la talla de falda.",
   vacunaCovid: "Indique si tiene la vacuna COVID-19.",
   enfermedad: "Indique si padece alguna enfermedad.",
   cualEnfermedad: "Especifique la enfermedad.",
@@ -114,6 +165,8 @@ const mensajesPersonalizados = {
   duiResponsable: "Formato requerido: 00000000-0.",
   telefonoResponsable: "Ingrese exactamente 8 números.",
   whatsappResponsable: "Ingrese exactamente 8 números.",
+  correoResponsable: "Ingrese un correo electrónico válido que termine en @gmail.com.",
+  distanciaKm: "Ingrese la distancia en kilómetros (máximo 3 números, puede incluir un punto decimal).",
   madreNombre: "Ingrese el nombre completo de la madre (solo letras).",
   madreOcupacion: "Ingrese la ocupación de la madre.",
   madreLugarTrabajo: "Ingrese el lugar de trabajo de la madre.",
@@ -166,9 +219,22 @@ function limpiarError(el) {
   el.style.borderColor = "";
 }
 
-// Valida un solo campo y muestra/oculta su mensaje de error
 function validarCampo(el) {
-  if (el.type === "file" || el.type === "submit" || el.type === "button") return true;
+  if (el.type === "submit" || el.type === "button") return true;
+
+  if (el.type === "file") {
+    const fotoError = document.getElementById("fotoError");
+    if (el.hasAttribute("required") && el.files.length === 0) {
+      if (fotoError) fotoError.textContent = "La fotografía es obligatoria.";
+      el.closest(".foto-label")?.style.setProperty("border-color", "red");
+      return false;
+    } else {
+      if (fotoError) fotoError.textContent = "";
+      el.closest(".foto-label")?.style.removeProperty("border-color");
+      return true;
+    }
+  }
+
   if (el.readOnly || el.disabled) return true;
 
   if (!campoVisible(el)) {
@@ -179,6 +245,11 @@ function validarCampo(el) {
   let valido = true;
   let mensaje = "";
   const valor = el.value ? el.value.trim() : "";
+
+  if (el.id === "lugarNacimiento") {
+    mensaje = validarLugarNacimiento(el);
+    valido = !mensaje;
+  }
 
   if (el.hasAttribute("required") && !valor) {
     valido = false;
@@ -191,13 +262,11 @@ function validarCampo(el) {
     }
   }
 
-  // Validación extra: el correo personal siempre debe contener "@"
-  if (valido && el.id === "correoPersonal" && valor && !valor.includes("@")) {
+  if (valido && (el.id === "correoPersonal" || el.id === "correoResponsable") && valor && !valor.includes("@")) {
     valido = false;
     mensaje = "El correo debe contener el símbolo arroba (@).";
   }
 
-  // Validación extra: NIE ya registrado (se marca desde verificarNieDuplicado)
   if (valido && el.id === "nie" && el.dataset.duplicado === "true") {
     valido = false;
     mensaje = "Este NIE ya se encuentra registrado en el sistema.";
@@ -216,10 +285,31 @@ function validarCampo(el) {
   return valido;
 }
 
-// Valida todos los campos visibles de un paso; si hay error, enfoca el primero
 function validarPaso(numeroPaso) {
   const seccion = document.querySelector(`.form-step[data-step="${numeroPaso}"]`);
   if (!seccion) return true;
+
+  if (numeroPaso === 2) {
+    const gradoSeleccionado = document.getElementById("grado")?.value;
+    const ultimoAnioAprobado = document.getElementById("ultimoAnioAprobado")?.value;
+
+    if (gradoSeleccionado && ultimoAnioAprobado) {
+      const anioEsperado = {
+        "Primer Año": "Noveno Grado",
+        "Segundo Año": "Primer Año",
+        "Tercer Año": "Segundo Año"
+      }[gradoSeleccionado];
+
+      if (ultimoAnioAprobado !== anioEsperado && ultimoAnioAprobado !== gradoSeleccionado) {
+        alert(`❌ Error de coherencia:\nSi el estudiante va a cursar "${gradoSeleccionado}", el último año aprobado debe ser "${anioEsperado}" (o el mismo año si está repitiendo).\n\nCorrija la información antes de continuar.`);
+        return false;
+      }
+    }
+
+    if (!validarHermanos()) {
+      return false;
+    }
+  }
 
   const campos = seccion.querySelectorAll("input, select, textarea");
   let pasoValido = true;
@@ -227,6 +317,7 @@ function validarPaso(numeroPaso) {
 
   campos.forEach((el) => {
     if (el.type === "submit" || el.type === "button" || el.readOnly || el.disabled) return;
+    if (el.classList && el.classList.contains("hermano-input")) return; // validado aparte
     const ok = validarCampo(el);
     if (!ok) {
       pasoValido = false;
@@ -234,15 +325,21 @@ function validarPaso(numeroPaso) {
     }
   });
 
+  if (!validarHermanos()) {
+    pasoValido = false;
+  }
+
   if (primerInvalido) {
     primerInvalido.scrollIntoView({ behavior: "smooth", block: "center" });
-    primerInvalido.focus({ preventScroll: true });
+    if (primerInvalido.type !== "file") {
+      primerInvalido.focus({ preventScroll: true });
+    }
   }
 
   return pasoValido;
 }
 
-// Enlazar validación en vivo a todos los campos del formulario
+// Enlazar validación en vivo
 const todosLosCampos = form.querySelectorAll("input, select, textarea");
 todosLosCampos.forEach((el) => {
   if (el.type === "submit" || el.type === "button" || el.type === "file") return;
@@ -252,30 +349,22 @@ todosLosCampos.forEach((el) => {
 });
 
 /* =========================================================
-   NIE DUPLICADO — verificar contra Supabase
+   NIE DUPLICADO
 ========================================================= */
-
-// Consulta Supabase y devuelve true si el NIE ya existe.
 async function nieYaExisteEnBD(valorNie) {
   if (!valorNie) return false;
   try {
     return await nieYaExiste(valorNie);
   } catch (error) {
     console.error("Error verificando NIE duplicado:", error);
-    // Si falla la consulta, no bloqueamos al usuario por un problema de red/permisos;
-    // la validación final se repite de todas formas al enviar el formulario.
     return false;
   }
 }
 
-// Verificación en vivo cuando el usuario termina de escribir el NIE (blur)
 async function verificarNieDuplicado() {
   if (!nie) return;
   const valor = nie.value.trim();
-
-  // Limpiar estado previo mientras se revisa
   nie.dataset.duplicado = "false";
-
   if (!valor) return;
 
   const span = obtenerSpanError(nie);
@@ -285,9 +374,6 @@ async function verificarNieDuplicado() {
 
   const existe = await nieYaExisteEnBD(valor);
   nie.dataset.duplicado = existe ? "true" : "false";
-
-  // Vuelve a correr la validación normal del campo, que ahora
-  // toma en cuenta dataset.duplicado
   validarCampo(nie);
 
   if (!existe && span && span.textContent === "Verificando NIE…") {
@@ -297,26 +383,20 @@ async function verificarNieDuplicado() {
 
 if (nie) {
   nie.addEventListener("blur", verificarNieDuplicado);
-  // Si el usuario vuelve a editar el NIE después de haber sido marcado
-  // como duplicado, se limpia esa marca hasta la próxima verificación.
   nie.addEventListener("input", () => {
     nie.dataset.duplicado = "false";
   });
 }
 
 /* =========================================================
-   FUNCIONES FALTANTES (AGREGADAS)
+   FUNCIONES DE CONFIGURACIÓN
 ========================================================= */
-
-// Bloquea únicamente el avance. La fecha y el grado quedan disponibles
-// para que el usuario pueda corregirlos sin perder lo que ya escribió.
 function actualizarBloqueoEdad(bloqueado) {
   if (form) form.dataset.edadBloqueada = bloqueado ? "true" : "false";
   if (btnSiguiente && pasoActual === 1) btnSiguiente.disabled = bloqueado;
   if (btnGuardar) btnGuardar.disabled = bloqueado;
 }
 
-// Función para configurar campos de salud
 function configurarCamposSalud() {
   const enfermedad = document.getElementById("enfermedad");
   const campoCualEnfermedad = document.getElementById("campoCualEnfermedad");
@@ -350,38 +430,41 @@ function configurarCamposSalud() {
   });
 }
 
-// Función para configurar la foto (versión mejorada)
 function configurarFoto() {
   if (!fotoInput) return;
 
+  fotoInput.required = true;
+
   fotoInput.addEventListener("change", function(e) {
     const file = this.files[0];
+    const fotoError = document.getElementById("fotoError");
+
     if (!file) {
       if (vistaPrevia) vistaPrevia.innerHTML = "";
       this.closest(".foto-label")?.classList.remove("con-foto");
+      if (fotoError) fotoError.textContent = "La fotografía es obligatoria.";
       return;
     }
 
-    // Validar que sea imagen
     if (!file.type.startsWith('image/')) {
       alert("⚠️ Solo se permiten archivos de imagen");
       this.value = "";
       return;
     }
 
-    // Validar tamaño (máximo 2MB)
     if (file.size > 2 * 1024 * 1024) {
       alert("⚠️ La imagen no debe superar los 2MB");
       this.value = "";
       return;
     }
 
+    if (fotoError) fotoError.textContent = "";
+    this.closest(".foto-label")?.style.removeProperty("border-color");
+
     const reader = new FileReader();
     reader.onload = function(event) {
-      // Guardar la imagen en Base64 en un campo oculto
       const fotoBase64 = event.target.result;
-      
-      // Mostrar vista previa
+
       const img = document.createElement("img");
       img.src = fotoBase64;
       img.alt = "Foto del estudiante";
@@ -390,8 +473,7 @@ function configurarFoto() {
         vistaPrevia.appendChild(img);
         fotoInput.closest(".foto-label")?.classList.add("con-foto");
       }
-      
-      // Guardar el Base64 en un input oculto para enviarlo
+
       let hiddenInput = document.getElementById("fotoBase64");
       if (!hiddenInput) {
         hiddenInput = document.createElement("input");
@@ -406,122 +488,155 @@ function configurarFoto() {
   });
 }
 
-// Función para configurar campos de hermanos
+/* =========================================================
+   HERMANOS EN EL CENTRO EDUCATIVO (dinámico, máx. 3)
+========================================================= */
+const MAX_HERMANOS = 3;
+let contadorHermanos = 0;
+
+function crearFilaHermano() {
+  contadorHermanos++;
+  const idSufijo = contadorHermanos;
+
+  const fila = document.createElement("div");
+  fila.className = "fila-hermano";
+  fila.dataset.indice = idSufijo;
+
+  fila.innerHTML = `
+    <div class="campo hermano-campo-nombre">
+      <label for="nombreHermano_${idSufijo}">Nombre del hermano/a</label>
+      <input type="text" id="nombreHermano_${idSufijo}" name="nombresHermanos[]"
+             class="hermano-input hermano-nombre" maxlength="50"
+             pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\\s]+"
+             placeholder="Nombre completo" />
+    </div>
+    <div class="campo hermano-campo-grado">
+      <label for="gradoHermano_${idSufijo}">Grado actual</label>
+      <select id="gradoHermano_${idSufijo}" name="gradosHermanos[]"
+              class="hermano-input hermano-grado">
+        <option value="">Seleccione el grado</option>
+        <option value="Primer Año">Primer Año</option>
+        <option value="Segundo Año">Segundo Año</option>
+        <option value="Tercer Año">Tercer Año</option>
+      </select>
+    </div>
+    <button type="button" class="btn-hermano-quitar" title="Quitar este hermano" aria-label="Quitar este hermano">✕</button>
+  `;
+
+  const btnQuitar = fila.querySelector(".btn-hermano-quitar");
+  btnQuitar.addEventListener("click", () => {
+    fila.remove();
+    actualizarEstadoBotonesHermanos();
+  });
+
+  fila.querySelectorAll(".hermano-input").forEach((inp) => {
+    inp.addEventListener("input", () => limpiarError(inp));
+    inp.addEventListener("change", () => limpiarError(inp));
+  });
+
+  return fila;
+}
+
+function actualizarEstadoBotonesHermanos() {
+  const lista = document.getElementById("listaHermanos");
+  const btnMas = document.getElementById("btnAgregarHermano");
+  if (!lista || !btnMas) return;
+  const total = lista.querySelectorAll(".fila-hermano").length;
+  btnMas.disabled = total >= MAX_HERMANOS;
+  btnMas.title = total >= MAX_HERMANOS
+    ? `Máximo ${MAX_HERMANOS} hermanos`
+    : "Agregar otro hermano o hermana";
+}
+
+function validarHermanos() {
+  const selectHermanos = document.getElementById("hermanosCentroeducativo");
+  if (!selectHermanos || selectHermanos.value !== "Sí") return true;
+
+  const lista = document.getElementById("listaHermanos");
+  const avisoHermanos = document.getElementById("avisoHermanosVacio");
+  if (!lista) return true;
+
+  const filas = lista.querySelectorAll(".fila-hermano");
+
+  if (filas.length === 0) {
+    if (avisoHermanos) {
+      avisoHermanos.textContent = "Agregue al menos un hermano o hermana con el botón “+”.";
+      avisoHermanos.style.display = "block";
+    }
+    return false;
+  }
+
+  let valido = true;
+  filas.forEach((fila) => {
+    const nombre = fila.querySelector(".hermano-nombre");
+    const gradoH = fila.querySelector(".hermano-grado");
+    const nombreVacio = !nombre.value.trim();
+    const gradoVacio = !gradoH.value.trim();
+
+    if (nombreVacio || gradoVacio) {
+      valido = false;
+      fila.classList.add("fila-hermano-invalida");
+      if (nombreVacio) { nombre.style.borderColor = "red"; }
+      if (gradoVacio) { gradoH.style.borderColor = "red"; }
+    } else {
+      fila.classList.remove("fila-hermano-invalida");
+      nombre.style.borderColor = "";
+      gradoH.style.borderColor = "";
+    }
+  });
+
+  if (avisoHermanos) {
+    avisoHermanos.textContent = valido
+      ? ""
+      : "Complete el nombre y grado de cada hermano agregado, o elimínelo con el botón “✕”.";
+    avisoHermanos.style.display = valido ? "none" : "block";
+  }
+
+  return valido;
+}
+
+function limpiarHermanos() {
+  const lista = document.getElementById("listaHermanos");
+  if (lista) lista.innerHTML = "";
+  const avisoHermanos = document.getElementById("avisoHermanosVacio");
+  if (avisoHermanos) {
+    avisoHermanos.textContent = "";
+    avisoHermanos.style.display = "none";
+  }
+  actualizarEstadoBotonesHermanos();
+}
+
 function configurarCamposHermanos() {
   const selectHermanos = document.getElementById("hermanosCentroeducativo");
-  const campoNombres = document.getElementById("campoNombresHermanos");
-  const campoNivel = document.getElementById("campoNivelAcademico");
-  const inputNombres = document.getElementById("nombresHermanos");
-  const inputNivel = document.getElementById("nivelAcademico");
+  const bloqueHermanos = document.getElementById("bloqueHermanos");
+  const btnMas = document.getElementById("btnAgregarHermano");
+  const lista = document.getElementById("listaHermanos");
 
-  if (!selectHermanos) return;
+  if (!selectHermanos || !bloqueHermanos || !btnMas || !lista) return;
+
+  btnMas.addEventListener("click", () => {
+    const total = lista.querySelectorAll(".fila-hermano").length;
+    if (total >= MAX_HERMANOS) return;
+    lista.appendChild(crearFilaHermano());
+    actualizarEstadoBotonesHermanos();
+  });
 
   selectHermanos.addEventListener("change", function() {
     if (this.value === "Sí") {
-      if (campoNombres) campoNombres.style.display = "block";
-      if (campoNivel) campoNivel.style.display = "block";
-      if (inputNombres) inputNombres.required = true;
-      if (inputNivel) inputNivel.required = true;
+      bloqueHermanos.style.display = "block";
+      if (lista.querySelectorAll(".fila-hermano").length === 0) {
+        lista.appendChild(crearFilaHermano());
+      }
+      actualizarEstadoBotonesHermanos();
     } else {
-      if (campoNombres) campoNombres.style.display = "none";
-      if (campoNivel) campoNivel.style.display = "none";
-      if (inputNombres) {
-        inputNombres.required = false;
-        inputNombres.value = "";
-        limpiarError(inputNombres);
-      }
-      if (inputNivel) {
-        inputNivel.required = false;
-        inputNivel.value = "";
-        limpiarError(inputNivel);
-      }
+      bloqueHermanos.style.display = "none";
+      limpiarHermanos();
     }
   });
 }
 
-/* =========================================================
-   VALIDACIÓN DE FORMATO DE TALLAS (letras y números)
-========================================================= */
 const TALLAS_VALIDAS = ["XS", "S", "M", "L", "XL"];
 
-const camposLetra = ["tallaCamisa", "tallaPantalon", "tallaBlusa", "tallaFalda"];
-const camposNumero = ["tallaZapatos"];
-
-function getErrorSpan(input) {
-  // Busca automáticamente el span de error asociado, si existe
-  return document.getElementById("error" + input.id.replace("talla", ""));
-}
-
-function mostrarError(input, mensaje, errorSpan = getErrorSpan(input)) {
-  input.classList.add("input-invalido");
-  if (errorSpan) errorSpan.textContent = mensaje;
-}
-
-function limpiarErrorTalla(input, errorSpan = getErrorSpan(input)) {
-  input.classList.remove("input-invalido");
-  if (errorSpan) errorSpan.textContent = "";
-}
-
-function validarTallaLetra(input) {
-  input.addEventListener("input", () => {
-    input.value = input.value.replace(/[^a-zA-Z]/g, "").toUpperCase();
-  });
-
-  input.addEventListener("blur", () => {
-    const valor = input.value.trim().toUpperCase();
-    input.value = valor;
-
-    if (!input.required && valor === "") {
-      limpiarErrorTalla(input);
-      return;
-    }
-    if (valor === "") {
-      mostrarError(input, "Este campo es obligatorio.");
-    } else if (!TALLAS_VALIDAS.includes(valor)) {
-      mostrarError(input, "Talla inválida. Use: XS, S, M, L, XL.");
-    } else {
-      limpiarErrorTalla(input);
-    }
-  });
-}
-
-function validarTallaNumero(input) {
-  input.addEventListener("input", () => {
-    input.value = input.value.replace(/[^0-9]/g, "").slice(0, 2);
-  });
-
-  input.addEventListener("blur", () => {
-    const valor = input.value.trim();
-
-    if (!input.required && valor === "") {
-      limpiarErrorTalla(input);
-      return;
-    }
-    if (valor === "") {
-      mostrarError(input, "Este campo es obligatorio.");
-    } else if (!/^\d{1,2}$/.test(valor)) {
-      mostrarError(input, "Solo números, máximo 2 dígitos.");
-    } else {
-      limpiarErrorTalla(input);
-    }
-  });
-}
-
-function inicializarValidacionTallas() {
-  camposLetra.forEach(id => {
-    const input = document.getElementById(id);
-    if (input) validarTallaLetra(input);
-  });
-
-  camposNumero.forEach(id => {
-    const input = document.getElementById(id);
-    if (input) validarTallaNumero(input);
-  });
-}
-
-/* =========================================================
-   CONFIGURACIÓN DE TALLAS (tu función original, sin cambios)
-========================================================= */
 function configurarTallas() {
   const sexo = document.getElementById("sexo");
   const campoCamisa = document.getElementById("campoCamisa");
@@ -593,7 +708,6 @@ function configurarTallas() {
   });
 }
 
-/* Avisa cuando el estudiante cursará nuevamente el mismo año. */
 function configurarUltimoAnioAprobado() {
   const ultimoAnio = document.getElementById("ultimoAnioAprobado");
   const ayuda = document.getElementById("ayudaUltimoAnio");
@@ -630,12 +744,12 @@ function configurarUltimoAnioAprobado() {
   mostrarAvisoRepeticion();
 }
 
-/* Si el responsable es mamá o papá, replica sus datos en el bloque familiar. */
 function configurarAutollenadoResponsable() {
   const parentesco = document.getElementById("parentesco");
   const responsable = document.getElementById("responsable");
   const duiResponsable = document.getElementById("duiResponsable");
   const telefonoResponsable = document.getElementById("telefonoResponsable");
+  const correoResponsable = document.getElementById("correoResponsable");
   if (!parentesco || !responsable) return;
 
   const idsAutollenables = [
@@ -643,7 +757,6 @@ function configurarAutollenadoResponsable() {
     "padreNombre", "padreDui", "padreCelular"
   ];
 
-  // Una edición manual deja de considerarse una copia automática del responsable.
   idsAutollenables.forEach((id) => {
     document.getElementById(id)?.addEventListener("input", (evento) => {
       delete evento.currentTarget.dataset.autollenadoResponsable;
@@ -651,7 +764,6 @@ function configurarAutollenadoResponsable() {
   });
 
   const sincronizar = () => {
-    // Retira solo copias automáticas anteriores y conserva los datos escritos manualmente.
     idsAutollenables.forEach((id) => {
       const campo = document.getElementById(id);
       if (campo?.dataset.autollenadoResponsable === "true") {
@@ -678,10 +790,139 @@ function configurarAutollenadoResponsable() {
     });
   };
 
-  [parentesco, responsable, duiResponsable, telefonoResponsable]
+  [parentesco, responsable, duiResponsable, telefonoResponsable, correoResponsable]
     .filter(Boolean)
     .forEach(campo => campo.addEventListener("input", sincronizar));
   parentesco.addEventListener("change", sincronizar);
+}
+
+/* =========================================================
+   DISTANCIA EN KM: máximo 3 números (con un decimal opcional)
+========================================================= */
+function configurarDistanciaKm() {
+  const campo = document.getElementById("distanciaKm");
+  if (!campo) return;
+
+  campo.addEventListener("input", function () {
+    let valor = this.value.replace(/[^0-9.]/g, "");
+
+    // Permitir un solo punto decimal
+    const partes = valor.split(".");
+    if (partes.length > 2) {
+      valor = partes[0] + "." + partes.slice(1).join("");
+    }
+
+    const [entero, decimal] = valor.split(".");
+    let enteroLimitado = (entero || "").slice(0, 3);
+    let resultado = enteroLimitado;
+
+    if (valor.includes(".")) {
+      const decimalLimitado = (decimal || "").slice(0, Math.max(0, 3 - enteroLimitado.length));
+      resultado = enteroLimitado + "." + decimalLimitado;
+    }
+
+    this.value = resultado;
+  });
+}
+
+/* =========================================================
+   DOCUMENTACIÓN A PRESENTAR (según grado y tipo de ingreso)
+========================================================= */
+const DOCUMENTACION = {
+  "Nuevo ingreso": {
+    "Primer Año": [
+      "Certificado de 9° grado o boleta de nota con firma y sello (original y copia).",
+      "Partida de nacimiento reciente (original y copia, máximo 3 meses de emisión).",
+      "Constancia de conducta (original y copia).",
+      "Cuatro fotografías de 3.5cm x 2.5cm (blanco y negro de tiempo en papel granulado). Podrán ser tomadas y recibidas en la institución.",
+      "Hoja de inscripción con llenado completo y datos solicitados (letra legible y tinta azul).",
+      "Dos fotocopias de DUI del responsable (y del estudiante si es mayor de edad) al 150%."
+    ],
+    "Segundo Año": [
+      "Certificado de 9° grado y 1° año bachillerato (original y copia).",
+      "Partida de nacimiento reciente (original y copia, máximo 3 meses de emisión).",
+      "Constancia de conducta (original y copia).",
+      "Constancia de servicios social estudiantil (original y copia).",
+      "Cuatro fotografías de 3.5cm x 2.5cm (blanco y negro de tiempo en papel granulado). Podrán ser tomadas y recibidas en la institución.",
+      "Hoja de inscripción con llenado completo y datos solicitados (letra legible y tinta azul).",
+      "Dos fotocopias de DUI del responsable (y del estudiante si es mayor de edad) al 150%."
+    ],
+    "Tercer Año": [
+      "Certificado de 9° grado, 1° y 2° año de bachillerato (original y copia).",
+      "Partida de nacimiento reciente (original y copia, máximo 3 meses de emisión).",
+      "Constancia de conducta (original y copia).",
+      "Constancia de servicio social estudiantil (original y copia).",
+      "Cuatro fotografías de 3.5cm x 2.5cm (blanco y negro de tiempo en papel granulado). Podrán ser tomadas y recibidas en la institución.",
+      "Hoja de inscripción con llenado completo y datos solicitados (letra legible y tinta azul).",
+      "Dos copias de DUI del responsable (y del estudiante si es mayor de edad) al 150%."
+    ]
+  },
+  "Antiguo ingreso": {
+    "Segundo Año": [
+      "Cuatro fotografías de 3.5cm x 2.5cm (blanco y negro de tiempo en papel granulado). Podrán ser tomadas y recibidas en la institución.",
+      "Boleta de notas SIGES de primer año de bachillerato con materias aprobadas (original y copia).",
+      "Hoja de inscripción con llenado completo y datos solicitados (letra legible y tinta azul).",
+      "Dos fotocopias de DUI del responsable (y del estudiante si es mayor de edad) al 150%."
+    ],
+    "Tercer Año": [
+      "Cuatro fotografías de 3.5cm x 2.5cm (blanco y negro de tiempo en papel granulado). Podrán ser tomadas y recibidas en la institución.",
+      "Boleta de notas SIGES de segundo año de bachillerato con materias aprobadas (original y copia).",
+      "Hoja de inscripción con llenado completo y datos solicitados (letra legible y tinta azul).",
+      "Dos fotocopias de DUI del responsable (y del estudiante si es mayor de edad) al 150%."
+    ]
+  }
+};
+
+function actualizarDocumentacion() {
+  const bloque = document.getElementById("bloqueDocumentacion");
+  if (!bloque) return;
+
+  const tipo = tipoIngreso ? tipoIngreso.value : "";
+  const gradoValor = grado ? grado.value : "";
+
+  const lista = (DOCUMENTACION[tipo] && DOCUMENTACION[tipo][gradoValor]) || null;
+
+  if (!tipo || !gradoValor) {
+    bloque.innerHTML = `<p class="documentacion-placeholder">Seleccione el grado (Paso 1) y el tipo de ingreso (Paso 2) para ver la documentación requerida.</p>`;
+    return;
+  }
+
+  if (!lista) {
+    bloque.innerHTML = `<p class="documentacion-placeholder">No hay documentación registrada para "${gradoValor}" como "${tipo}". Consulte con la institución.</p>`;
+    return;
+  }
+
+  bloque.innerHTML = `
+    <span class="documentacion-etiqueta">${tipo} · ${gradoValor}</span>
+    <h4>Documentos a presentar</h4>
+    <ul>${lista.map(item => `<li>${item}</li>`).join("")}</ul>
+  `;
+}
+
+/* =========================================================
+   DUI DEL ESTUDIANTE: opcional si es menor, obligatorio a los 18
+========================================================= */
+function actualizarRequeridoDuiEstudiante() {
+  const duiEstudiante = document.getElementById("duiEstudiante");
+  if (!duiEstudiante || !edad) return;
+
+  const edadActual = parseInt(edad.value);
+  const esObligatorio = !Number.isNaN(edadActual) && edadActual >= 18;
+
+  duiEstudiante.required = esObligatorio;
+
+  const label = document.querySelector('label[for="duiEstudiante"]');
+  if (label) {
+    label.textContent = esObligatorio
+      ? "DUI del estudiante"
+      : "DUI del estudiante (opcional)";
+  }
+
+  if (!esObligatorio && !duiEstudiante.value.trim()) {
+    limpiarError(duiEstudiante);
+  } else {
+    validarCampo(duiEstudiante);
+  }
 }
 
 /* =========================================================
@@ -689,12 +930,8 @@ function configurarAutollenadoResponsable() {
 ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
   configurarTallas();
-  inicializarValidacionTallas();
 });
 
-/* =========================================================
-   INICIO
-========================================================= */
 window.addEventListener("DOMContentLoaded", async () => {
   try {
     colocarFechaHoraActual();
@@ -711,15 +948,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     configurarAutollenadoResponsable();
     configurarConQuienVive();
     configurarTema();
+    configurarDistanciaKm();
+    actualizarRequeridoDuiEstudiante();
 
-    // ===== EVENTOS DE NAVEGACIÓN =====
     if (btnSiguiente) {
       btnSiguiente.addEventListener("click", async () => {
-        // No avanza al siguiente paso si el paso actual tiene campos inválidos
         if (!validarPaso(pasoActual)) return;
 
-        // Si estamos saliendo del paso que contiene el NIE, confirmar que
-        // no esté duplicado antes de continuar.
         if (pasoActual === 1 && nie) {
           await verificarNieDuplicado();
           if (nie.dataset.duplicado === "true") {
@@ -750,9 +985,12 @@ window.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    // ===== VALIDACIONES EXTRA =====
     if (grado) grado.addEventListener("change", validarSobreedad);
     if (tipoIngreso) tipoIngreso.addEventListener("change", validarSobreedad);
+
+    if (grado) grado.addEventListener("change", actualizarDocumentacion);
+    if (tipoIngreso) tipoIngreso.addEventListener("change", actualizarDocumentacion);
+    actualizarDocumentacion();
 
   } catch (error) {
     console.error("Error al iniciar el formulario:", error);
@@ -760,21 +998,26 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 /* =========================================================
-   ENVÍO DEL FORMULARIO (FUERA DEL DOMContentLoaded)
+   ENVÍO DEL FORMULARIO
 ========================================================= */
 if (form) {
   form.addEventListener("submit", async function(e) {
     e.preventDefault();
 
-    // Verificar si el formulario está bloqueado por edad
+    const lugar = document.getElementById("lugarNacimiento");
+    if (lugar && validarLugarNacimiento(lugar)) {
+      mostrarPaso(1);
+      validarCampo(lugar);
+      lugar.focus();
+      return;
+    }
+
     const mensajeBloqueo = document.getElementById("mensajeBloqueoEdad");
     if (mensajeBloqueo && mensajeBloqueo.classList.contains("mostrar")) {
       alert("❌ No se puede guardar la matrícula porque el estudiante supera la edad máxima permitida.");
       return;
     }
 
-    // Validar todos los pasos (mensaje individual debajo de cada campo
-    // y salto automático al primer paso con errores)
     let formularioValido = true;
     let primerPasoInvalido = null;
 
@@ -797,9 +1040,6 @@ if (form) {
       return;
     }
 
-    // Verificación final e infalible: revisar contra Firestore que el NIE
-    // no exista ya, justo antes de guardar (evita condiciones de carrera
-    // o que el usuario haya editado el NIE sin volver a salir del campo).
     if (mensajeExito) {
       mensajeExito.textContent = "⏳ Verificando NIE…";
       mensajeExito.style.color = "blue";
@@ -821,30 +1061,34 @@ if (form) {
       return;
     }
 
-    // Preparar datos
     const formData = new FormData(form);
     const data = {};
 
-    // Procesar cada campo
     formData.forEach((value, key) => {
-      // Ignorar el campo de archivo (fotoEstudiante)
-      if (key !== "fotoEstudiante" && value.trim() !== "") {
+      if (key !== "fotoEstudiante" && key !== "nombresHermanos[]" && key !== "gradosHermanos[]" && value.trim() !== "") {
         data[key] = value;
       }
     });
 
-    // La base de datos conserva la respuesta escrita cuando se elige "Otros".
+    // Hermanos: se arman como lista de objetos { nombre, grado }
+    const nombresHermanos = formData.getAll("nombresHermanos[]").map(v => v.trim());
+    const gradosHermanos = formData.getAll("gradosHermanos[]").map(v => v.trim());
+    const hermanos = nombresHermanos
+      .map((nombreH, i) => ({ nombre: nombreH, grado: gradosHermanos[i] || "" }))
+      .filter(h => h.nombre || h.grado);
+    if (hermanos.length) {
+      data.hermanos = hermanos;
+    }
+
     if (data.conQuienVive === "Otros" && data.conQuienViveOtro) {
       data.conQuienVive = `Otros: ${data.conQuienViveOtro}`;
     }
 
-    // Agregar la foto en Base64 si existe
     const fotoBase64Input = document.getElementById("fotoBase64");
     if (fotoBase64Input && fotoBase64Input.value) {
       data.fotoEstudiante = fotoBase64Input.value;
     }
 
-    // Agregar metadatos
     data.fechaMatricula = fechaMatricula ? fechaMatricula.textContent : "";
     data.horaMatricula = horaMatricula ? horaMatricula.textContent : "";
     data.numeroFicha = numeroFicha ? numeroFicha.value : "";
@@ -854,7 +1098,6 @@ if (form) {
     console.log("📤 Datos a guardar:", data);
 
     try {
-      // Mostrar mensaje de carga
       if (mensajeExito) {
         mensajeExito.textContent = "⏳ Guardando matrícula...";
         mensajeExito.style.color = "blue";
@@ -863,8 +1106,6 @@ if (form) {
       const docRef = await crearMatricula(data);
       console.log("✅ Matrícula guardada con ID:", docRef.id);
 
-      // La matrícula ya fue guardada: se oculta el formulario para evitar
-      // cambios o un segundo envío y se muestra el cierre definitivo.
       form.querySelectorAll("input, select, textarea, button").forEach((campo) => {
         campo.disabled = true;
       });
@@ -882,8 +1123,7 @@ if (form) {
         mensajeExito.textContent = "❌ Error al guardar: " + error.message;
         mensajeExito.style.color = "red";
       }
-      
-      // Mostrar error más amigable
+
       if (error.message.includes("Unsupported field value")) {
         alert("❌ Error con la foto. Por favor, intenta con otra imagen o sin foto.");
       }
@@ -907,7 +1147,7 @@ function colocarFechaHoraActual() {
   const minutos = String(ahora.getMinutes()).padStart(2, "0");
   const ampm = horas >= 12 ? "PM" : "AM";
   horas = horas % 12;
-  horas = horas ? horas : 12; // el 0 se muestra como 12
+  horas = horas ? horas : 12;
   const horasFormateadas = String(horas).padStart(2, "0");
 
   horaMatricula.textContent = `${horasFormateadas}:${minutos} ${ampm}`;
@@ -924,7 +1164,6 @@ async function generarNumeroFicha() {
     console.log("📝 Número de ficha generado:", numeroFicha.value);
   } catch (error) {
     console.error("Error generando número de ficha:", error);
-    // Fallback: usar timestamp
     const timestamp = Date.now().toString().slice(-4);
     const anio = new Date().getFullYear();
     numeroFicha.value = `FIC-${anio}-${timestamp}`;
@@ -932,68 +1171,26 @@ async function generarNumeroFicha() {
 }
 
 /* =========================================================
-   CORREO ESTUDIANTIL — el usuario solo escribe números,
-   el dominio "@clases.edu.sv" se agrega automáticamente.
+   CORREO ESTUDIANTIL
 ========================================================= */
 function configurarCorreoEstudiantil() {
   const input = document.getElementById("correoEstudiantil");
   if (!input) return;
 
+  input.readOnly = true;
+  input.style.backgroundColor = "#f3f4f6";
+  input.style.cursor = "not-allowed";
+
   const DOMINIO = "@clases.edu.sv";
 
-  input.addEventListener("input", () => {
-    // Tomar solo lo que el usuario escribió antes del arroba (si lo hay)
-    // y dejar únicamente números.
-    const parteUsuario = input.value.split("@")[0];
-    const soloNumeros = parteUsuario.replace(/\D/g, "");
-
-    input.value = soloNumeros ? soloNumeros + DOMINIO : "";
-
-    // Mantener el cursor justo después de los números (antes del dominio)
-    const posicionCursor = soloNumeros.length;
-    requestAnimationFrame(() => {
-      try {
-        input.setSelectionRange(posicionCursor, posicionCursor);
-      } catch (err) {
-        /* algunos navegadores/campos pueden no soportarlo, se ignora */
-      }
+  if (nie) {
+    nie.addEventListener("input", function () {
+      this.value = this.value.replace(/\D/g, "");
+      const soloNumeros = this.value;
+      input.value = soloNumeros ? soloNumeros + DOMINIO : "";
+      validarCampo(input);
     });
-
-    if (soloNumeros && !/^[0-9]+@clases\.edu\.sv$/.test(input.value)) {
-      input.setCustomValidity("El correo debe contener solo números y el dominio @clases.edu.sv");
-    } else {
-      input.setCustomValidity("");
-    }
-  });
-
-  // Evitar que el usuario pegue texto con letras dentro del correo
-  input.addEventListener("paste", (e) => {
-    e.preventDefault();
-    const texto = (e.clipboardData || window.clipboardData).getData("text");
-    const soloNumeros = texto.replace(/\D/g, "");
-    input.value = soloNumeros ? soloNumeros + DOMINIO : "";
-    validarCampo(input);
-  });
-}
-
-/* =========================================================
-   AUTOCOMPLETAR CORREO ESTUDIANTIL DESDE EL NIE
-   Cada vez que el usuario escribe en el campo NIE, el correo
-   estudiantil se llena automáticamente con esos mismos números
-   más el dominio @clases.edu.sv
-========================================================= */
-const DOMINIO_CORREO_ESTUDIANTIL = "@clases.edu.sv";
-
-function sincronizarCorreoEstudiantilConNie() {
-  const correoEstudiantil = document.getElementById("correoEstudiantil");
-  if (!correoEstudiantil || !nie) return;
-
-  const soloNumeros = nie.value.replace(/\D/g, "");
-  correoEstudiantil.value = soloNumeros ? soloNumeros + DOMINIO_CORREO_ESTUDIANTIL : "";
-  correoEstudiantil.setCustomValidity("");
-
-  // Refresca el mensaje de error/validación del campo si ya se había tocado
-  validarCampo(correoEstudiantil);
+  }
 }
 
 /* =========================================================
@@ -1002,8 +1199,6 @@ function sincronizarCorreoEstudiantilConNie() {
 function configurarFechaNacimiento() {
   if (!fechaNacimiento) return;
 
-  // No se permite seleccionar una fecha futura. Los límites por grado se
-  // comprueban con la edad calculada a la fecha de corte del ciclo 2027.
   const hoy = new Date();
   const hoyLocal = new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000)
     .toISOString().slice(0, 10);
@@ -1014,13 +1209,14 @@ function configurarFechaNacimiento() {
   fechaNacimiento.addEventListener("change", function() {
     calcularEdad();
     validarSobreedad();
+    actualizarRequeridoDuiEstudiante();
   });
 
   fechaNacimiento.addEventListener("input", function() {
     calcularEdad();
     validarSobreedad();
+    actualizarRequeridoDuiEstudiante();
   });
-
 }
 
 /* =========================================================
@@ -1045,7 +1241,6 @@ function calcularEdad() {
   }
 
   edad.value = anios;
-  console.log("Edad calculada:", anios);
 }
 
 /* =========================================================
@@ -1114,6 +1309,8 @@ function validarSobreedad() {
     if (estadoRevision) estadoRevision.value = "No requerida";
     actualizarBloqueoEdad(false);
   }
+
+  actualizarRequeridoDuiEstudiante();
 }
 
 /* =========================================================
@@ -1150,11 +1347,12 @@ function mostrarPaso(paso) {
 
   pasoActual = paso;
   actualizarBarraProgreso(paso);
+
+  if (paso === 6) {
+    actualizarDocumentacion();
+  }
 }
 
-/* =========================================================
-   BARRA DE PROGRESO (paso actual / total, con relleno)
-========================================================= */
 function actualizarBarraProgreso(paso) {
   const texto = document.getElementById("progresoTexto");
   const porcentaje = document.getElementById("progresoPorcentaje");
@@ -1188,27 +1386,12 @@ function configurarConQuienVive() {
         limpiarError(conQuienViveOtro);
       }
     }
-    const valor = conQuienVive.value;
-    const mostrarMadre = valor === "Madre" || valor === "Ambos";
-    const mostrarPadre = valor === "Padre" || valor === "Ambos";
-    const omitirPadres = Boolean(valor) && !mostrarMadre && !mostrarPadre;
-
-    actualizarBloquePadre(bloqueDatosMadre, mostrarMadre);
-    actualizarBloquePadre(bloqueDatosPadre, mostrarPadre);
-    if (avisoSinPadres) avisoSinPadres.hidden = !omitirPadres;
+    // Las preguntas sobre la Madre y el Padre siempre se muestran y son
+    // siempre obligatorias, sin importar con quién viva el estudiante.
     actualizarBarraProgreso(pasoActual);
   };
   conQuienVive.addEventListener("change", actualizar);
   actualizar();
-}
-
-function actualizarBloquePadre(bloque, mostrar) {
-  if (!bloque) return;
-  bloque.hidden = !mostrar;
-  bloque.querySelectorAll("input, select, textarea").forEach((campo) => {
-    campo.disabled = !mostrar;
-    if (!mostrar) limpiarError(campo);
-  });
 }
 
 function configurarTema() {
@@ -1231,10 +1414,7 @@ function configurarTema() {
 
 /* ============================================================
    VALIDACIÓN Y FORMATO DE TELÉFONOS
-   Formato obligatorio: 0000-0000
-   (solo números, no se permiten letras)
-   ============================================================ */
-
+============================================================ */
 const camposTelefono = [
   "telefonoEstudiante",
   "telefonoResponsable",
@@ -1244,38 +1424,22 @@ const camposTelefono = [
 ];
 
 camposTelefono.forEach(id => {
-
   const campo = document.getElementById(id);
-
   if (!campo) return;
 
   campo.addEventListener("input", function () {
-
-    // Eliminar todo lo que NO sea número
     let numeros = this.value.replace(/\D/g, "");
-
-    // Máximo 8 números
     numeros = numeros.substring(0, 8);
-
-    // Agregar guion después de los primeros 4
     if (numeros.length > 4) {
-      numeros =
-        numeros.substring(0, 4) +
-        "-" +
-        numeros.substring(4);
+      numeros = numeros.substring(0, 4) + "-" + numeros.substring(4);
     }
-
     this.value = numeros;
   });
-
 });
 
 /* ============================================================
-   VALIDACIÓN Y FORMATO DE DUI y NIE
-   Formato DUI: 00000000-0 / NIE: solo números
-   (solo números, no se permiten letras)
-   ============================================================ */
-
+   VALIDACIÓN Y FORMATO DE DUI
+============================================================ */
 const camposDui = [
   "duiEstudiante",
   "duiResponsable",
@@ -1284,53 +1448,22 @@ const camposDui = [
 ];
 
 camposDui.forEach(id => {
-
   const campo = document.getElementById(id);
-
   if (!campo) return;
 
   campo.addEventListener("input", function () {
-
-    // Eliminar letras y cualquier carácter que no sea número
     let numeros = this.value.replace(/\D/g, "");
-
-    // Máximo 9 números
     numeros = numeros.substring(0, 9);
-
-    // Agregar guion antes del último número
     if (numeros.length > 8) {
-      numeros =
-        numeros.substring(0, 8) +
-        "-" +
-        numeros.substring(8);
+      numeros = numeros.substring(0, 8) + "-" + numeros.substring(8);
     }
-
     this.value = numeros;
   });
-
 });
 
 /* ============================================================
-   VALIDACIÓN NIE — solo números
-   Además de dejar solo números, sincroniza automáticamente
-   el correo electrónico estudiantil con el valor del NIE.
-   ============================================================ */
-if (nie) {
-  nie.addEventListener("input", function () {
-    this.value = this.value.replace(/\D/g, "");
-    sincronizarCorreoEstudiantilConNie();
-  });
-}
-
-/* ============================================================
-   CAMPOS DE SOLO LETRAS (nombres, apellidos, parentesco, etc.)
-   No permite números ni símbolos, solo letras, tildes, ñ y espacios.
-   Además, se capitaliza EN VIVO (mientras se escribe) la primera
-   letra de cada palabra (Ej: "juan carlos" -> "Juan Carlos"),
-   y se vuelve a normalizar al salir del campo (blur).
-   ============================================================ */
-
-// Campos que están divididos (apellido/nombre por separado): máximo 10
+   CAMPOS DE SOLO LETRAS
+============================================================ */
 const camposLetraCortos = [
   "primerApellido",
   "segundoApellido",
@@ -1338,15 +1471,12 @@ const camposLetraCortos = [
   "segundoNombre"
 ];
 
-// Campos de nombre completo en un solo input: máximo 50
 const camposLetraLargos = [
-  "nombresHermanos",
   "responsable",
   "madreNombre",
   "padreNombre"
 ];
 
-// Campo de solo letras sin restricción especial de longitud de nombre (parentesco)
 const camposSoloLetras = ["parentesco"];
 
 function capitalizarTexto(texto) {
@@ -1357,7 +1487,6 @@ function capitalizarTexto(texto) {
     .join(" ");
 }
 
-// Capitaliza en vivo conservando la posición del cursor
 function capitalizarEnVivo(input) {
   const posicionCursor = input.selectionStart;
   const valorOriginal = input.value;
@@ -1376,7 +1505,6 @@ function configurarCampoSoloLetras(id, maxLongitud) {
   if (maxLongitud) campo.setAttribute("maxlength", String(maxLongitud));
 
   campo.addEventListener("input", function () {
-    // Solo letras, tildes, ñ y espacios — nada de números ni símbolos
     let valor = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, "");
     if (maxLongitud) valor = valor.slice(0, maxLongitud);
     this.value = valor;
@@ -1397,8 +1525,7 @@ camposSoloLetras.forEach(id => configurarCampoSoloLetras(id, null));
 
 /* ============================================================
    CAMPOS DE SOLO NÚMEROS (partida de nacimiento)
-   ============================================================ */
-
+============================================================ */
 const camposNumeroSimple = [
   "partidaNumero",
   "folio",
@@ -1407,13 +1534,10 @@ const camposNumeroSimple = [
 ];
 
 camposNumeroSimple.forEach(id => {
-
   const campo = document.getElementById(id);
-
   if (!campo) return;
 
   campo.addEventListener("input", function () {
     this.value = this.value.replace(/\D/g, "");
   });
-
 });

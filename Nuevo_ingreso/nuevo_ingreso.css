@@ -7,6 +7,37 @@
    "papel" en las secciones, en vez de un formulario genérico.
 ========================================================= */
 
+/* Buscador de lugar de nacimiento */
+.opciones-nacimiento {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #7ba99a;
+  border-radius: 8px;
+  background: var(--papel);
+  color: var(--tinta);
+  margin-top: 4px;
+}
+.opciones-nacimiento [role="option"], .opciones-nacimiento p {
+  padding: 12px;
+  overflow-wrap: anywhere;
+}
+.opciones-nacimiento [role="option"] { cursor: pointer; }
+.opciones-nacimiento [role="option"]:hover,
+.opciones-nacimiento [aria-selected="true"] { background: #d5eee3; color: #124a37; }
+.tema-oscuro .opciones-nacimiento { background: #111d19; color: #e7f3ef; }
+.tema-oscuro #ayudaNacimiento { color: #b3cbc1; }
+.tema-oscuro .opciones-nacimiento [role="option"]:hover,
+.tema-oscuro .opciones-nacimiento [aria-selected="true"] { background: #254b3c; color: #fff; }
+.solo-lector-nacimiento {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* ---------- RESET ---------- */
 * {
   margin: 0;

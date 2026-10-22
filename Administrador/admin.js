@@ -10,6 +10,15 @@ import {
   obtenerPerfil,
 } from "../supabase-data.js";
 import { descargarTablaExcel } from "../excel-export.js";
+import {
+  activarEdicion,
+  desactivarEdicion,
+  etiquetaCampo,
+  marcarErrorCampo,
+  nieBusquedaValido,
+  restringirBuscadorNie,
+  validarMatricula,
+} from "../validacion-matricula.js";
 
 let ultimosResultadosReportes = [];
 const accesoAdministrador = await protegerRuta("administrador");
@@ -22,14 +31,9 @@ if (accesoAdministrador) {
 
 /* =========================================================
    INDICACIONES / DOCUMENTOS REQUERIDOS POR AÑO
-   -----------------------------------------------------------
-   MISMO contenido que Docente/docente.js. Se necesita aquí
-   porque el docente guarda el checklist marcado por índice
-   (marcado/nota), no el texto de cada punto — así que para
-   mostrarlo legible en el modal de Administrador hace falta
-   esta misma lista para "traducir" cada índice a su texto.
-   Si se edita el listado en docente.js, debe editarse igual
-   aquí para que ambos paneles muestren lo mismo.
+   MISMO contenido que Docente/docente.js (el docente guarda el
+   checklist por índice; aquí se traduce cada índice a su texto).
+   Si se edita el listado en docente.js, editarlo igual aquí.
 ========================================================= */
 const INDICACIONES = {
   primer_nuevo: {
@@ -96,11 +100,28 @@ const resultadosSection = document.getElementById("resultadosBusqueda");
 const buscarInput = document.getElementById("buscarInput");
 
 let matriculaActual = null;
+let modoEdicion = false;
+let guardando = false;
+
+/* Deja todos los campos de la ficha en solo lectura y quita las restricciones de edición */
+function bloquearCampos() {
+  document.querySelectorAll("#resultadosBusqueda input.campo-lectura").forEach((el) => {
+    el.readOnly = true;
+    el.setAttribute("readonly", "");
+    el.setAttribute("aria-readonly", "true");
+    el.classList.remove("campo-editable");
+  });
+  desactivarEdicion(resultadosSection);
+  modoEdicion = false;
+  const botonModificar = document.querySelector(".btn-Modificar");
+  if (botonModificar) botonModificar.textContent = "✏️ Modificar";
+}
 
 /* =========================================================
-   FUNCIÓN PRINCIPAL DE BÚSQUEDA (SOLO POR NIE)
+   FUNCIÓN PRINCIPAL DE BÚSQUEDA (SOLO POR NIE: números, máx. 12)
 ========================================================= */
 window.buscarMatricula = async function () {
+  if (guardando) return;
   const valor = buscarInput.value.trim();
 
   if (!valor) {
@@ -109,12 +130,16 @@ window.buscarMatricula = async function () {
     return;
   }
 
+  if (!nieBusquedaValido(valor)) {
+    mostrarMensaje("⚠️ El NIE solo debe contener números (máximo 12 dígitos).", "warning");
+    ocultarResultados();
+    return;
+  }
+
   try {
     // Cada búsqueda inicia con la ficha bloqueada para no arrastrar un
     // modo de edición anterior a otro estudiante.
-    modoEdicion = false;
-    const botonModificar = document.querySelector(".btn-Modificar");
-    if (botonModificar) botonModificar.textContent = "✏️ Modificar";
+    bloquearCampos();
     mostrarMensaje("⏳ Buscando...", "loading");
     ocultarResultados();
 
@@ -129,7 +154,7 @@ window.buscarMatricula = async function () {
     matriculaActual = encontrado;
     mostrarMensaje("✅ Matrícula encontrada.", "success");
     mostrarResultados(encontrado);
-    generarFichaImprimir(encontrado, matriculaActual);
+    await generarFichaImprimir(encontrado, matriculaActual);
 
   } catch (error) {
     console.error("❌ Error:", error);
@@ -177,11 +202,6 @@ function mostrarResultados(data) {
     "r_nombresHermanos": data.nombresHermanos || "",
     "r_nivelAcademico": data.nivelAcademico || "",
 
-    "r_partidaNumero": data.partidaNumero || "",
-    "r_folio": data.folio || "",
-    "r_tomo": data.tomo || "",
-    "r_libro": data.libro || "",
-
     "r_computadoraMineducyt": data.computadoraMineducyt || "",
     "r_internet": data.internet || "",
     "r_tallaCamisa": data.tallaCamisa || "",
@@ -190,7 +210,6 @@ function mostrarResultados(data) {
     "r_tallaFalda": data.tallaFalda || "",
     "r_tallaZapatos": data.tallaZapatos || "",
 
-    "r_vacunaCovid": data.vacunaCovid || "",
     "r_enfermedad": data.enfermedad || "",
     "r_cualEnfermedad": data.cualEnfermedad || "",
     "r_medicamento": data.medicamento || "",
@@ -244,84 +263,47 @@ function mostrarResultados(data) {
 }
 
 /* =========================================================
-   AYUDANTE: descomponer una fecha (ISO "YYYY-MM-DD" o con
-   separador "/" o "-") en día, mes, mes en texto y año.
-========================================================= */
-const MESES_ES = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
-];
-
-function descomponerFecha(fechaStr) {
-  if (!fechaStr) return { dia: "", mes: "", mesNombre: "", anio: "" };
-
-  let partes = null;
-  const isoMatch = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(fechaStr);
-  const otroMatch = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/.exec(fechaStr);
-
-  if (isoMatch) {
-    partes = { anio: isoMatch[1], mes: isoMatch[2], dia: isoMatch[3] };
-  } else if (otroMatch) {
-    partes = { dia: otroMatch[1], mes: otroMatch[2], anio: otroMatch[3] };
-  }
-
-  if (!partes) return { dia: "", mes: "", mesNombre: "", anio: "" };
-
-  const mesIndex = parseInt(partes.mes, 10) - 1;
-  const mesNombre = MESES_ES[mesIndex] || "";
-
-  return {
-    dia: partes.dia.padStart(2, "0"),
-    mes: partes.mes.padStart(2, "0"),
-    mesNombre,
-    anio: partes.anio
-  };
-}
-
-/* =========================================================
    GENERAR FICHA IMPRIMIBLE / PDF
-   Arma el contenido de #contenidoImprimir replicando el
-   formato oficial de "Ficha de Matrícula Oficial del
-   alumno/a" del Ministerio de Educación, en una sola página
-   tamaño oficio, con los espacios llenados con los datos ya
-   registrados en el formulario de Nuevo Ingreso.
-
-   REGLAS DE IMPRESIÓN (actualizado):
-   - NO se imprime la sección de Partida de Nacimiento
-     (número, folio, tomo, libro): esa información queda
-     únicamente en la vista en pantalla / edición del
-     administrador, no en el documento impreso ni en el PDF.
-   - Cualquier campo de opción única (sexo, tipo de ingreso,
-     enfermedad, vacuna, computadora MINEDUCYT, internet,
-     zona de residencia, con quién vive, transporte, hermanos
-     en el centro, bachillerato) se imprime mostrando SOLO el
-     valor real que el estudiante marcó/seleccionó. Ya no se
-     listan las opciones no marcadas ni casillas vacías: si el
-     dato no existe, la línea completa se omite del impreso.
-   - Los campos que ningún formulario del sistema captura
-     todavía (dosis del medicamento, "en qué año" del último
-     grado aprobado, SELLO y las firmas) se dejan en blanco
-     para completarse a mano, igual que en el papel.
+   Arma el contenido de #contenidoImprimir con el formato oficial
+   de la "Ficha de Matrícula Oficial del alumno/a" (una página oficio).
+   - No se imprime la Partida de Nacimiento.
+   - Los campos de opción única muestran solo el valor marcado.
+   - Dosis, "en qué año", SELLO y firmas quedan en blanco.
 ========================================================= */
-function generarFichaImprimir(data, expediente) {
-  mostrarFichaOficial(document.getElementById("contenidoImprimir"), data);
+async function generarFichaImprimir(data, expediente) {
+  const registro = expediente?.documentosChecklist;
+  let nombreDocente = registro?.revisadoPorNombre || "";
+  if (registro?.actualizadoPor) {
+    try {
+      const perfil = await obtenerPerfil(registro.actualizadoPor);
+      nombreDocente = perfil?.nombre || nombreDocente;
+    } catch (error) {
+      console.error("No se pudo consultar al docente de la ficha:", error);
+    }
+  }
+  if (matriculaActual !== data) return false;
+  const contenedor = document.getElementById("contenidoImprimir");
+  mostrarFichaOficial(contenedor, { ...data, vacunaCovid: "" });
+  const nombresFirmas = [
+    nombreDocente,
+    data.responsable || "",
+    [data.primerNombre, data.segundoNombre, data.primerApellido, data.segundoApellido]
+      .filter(parte => parte && String(parte).trim())
+      .map(parte => String(parte).trim())
+      .join(" "),
+  ];
+  contenedor?.querySelectorAll(".fo-firma .fo-linea-firma").forEach((linea, indice) => {
+    if (!nombresFirmas[indice]) return;
+    const nombre = document.createElement("p");
+    nombre.textContent = nombresFirmas[indice];
+    linea.before(nombre);
+  });
+  return true;
 }
 
 /* =========================================================
    MODAL: VER DOCUMENTOS REGISTRADOS POR EL DOCENTE
-   -----------------------------------------------------------
-   Lee matriculaActual.documentosChecklist, que es el mismo
-   campo que guarda Docente/docente.js con updateDoc() sobre
-   el documento en la colección "matriculas". No existe una
-   colección "expedientes" separada.
-   Estructura real guardada por el docente:
-   {
-     tipo: "primer_nuevo" | "segundo_nuevo" | "segundo_antiguo" | "tercer_antiguo",
-     principal: [{ marcado: bool, nota: string }, ...],
-     general:   [{ marcado: bool, nota: string }, ...],
-     observaciones: string,
-     actualizado: "2026-08-17T10:00:00.000Z" (ISO string)
-   }
+   Lee matriculaActual.documentosChecklist (guardado por el docente).
 ========================================================= */
 function crearDocItem(texto, entrada) {
   const marcado = !!entrada?.marcado;
@@ -488,6 +470,7 @@ function ocultarResultados() {
 ========================================================= */
 window.limpiarBusqueda = function() {
   if (buscarInput) buscarInput.value = "";
+  bloquearCampos();
   ocultarResultados();
   matriculaActual = null;
   mostrarMensaje("💡 Ingrese el NIE del estudiante para buscar.", "info");
@@ -496,19 +479,19 @@ window.limpiarBusqueda = function() {
 /* =========================================================
    IMPRIMIR DOCUMENTO
 ========================================================= */
-window.imprimirDocumento = function() {
+window.imprimirDocumento = async function() {
   if (!matriculaActual) {
     alert("⚠️ Primero busque una matrícula.");
     return;
   }
 
-  window.print();
+  if (await generarFichaImprimir(matriculaActual, matriculaActual)) window.print();
 };
 
 /* =========================================================
    DESCARGAR PDF (requiere html2pdf)
 ========================================================= */
-window.descargarPDF = function() {
+window.descargarPDF = async function() {
   if (!matriculaActual) {
     alert("⚠️ Primero busque una matrícula.");
     return;
@@ -519,6 +502,7 @@ window.descargarPDF = function() {
     return;
   }
 
+  if (!await generarFichaImprimir(matriculaActual, matriculaActual)) return;
   const elemento = document.getElementById("contenidoImprimir");
   const nombre = `${matriculaActual.primerNombre || 'Estudiante'}_${matriculaActual.primerApellido || 'Apellido'}`;
 
@@ -550,10 +534,12 @@ window.descargarPDF = function() {
 };
 
 /* =========================================================
-   MODIFICAR CAMPOS (editar y guardar en Firestore)
+   MODIFICAR CAMPOS (editar y guardar)
+   Aplica las mismas reglas del formulario de Nuevo Ingreso
+   (validacion-matricula.js). El administrador puede corregir
+   también el número de ficha y la fecha de matrícula; la edad
+   se recalcula sola a partir de la fecha de nacimiento.
 ========================================================= */
-let modoEdicion = false;
-
 const CAMPOS_EDITABLES = [
   "r_numeroFicha", "r_fechaMatricula", "r_nie",
   "r_primerApellido", "r_segundoApellido", "r_primerNombre", "r_segundoNombre",
@@ -562,12 +548,10 @@ const CAMPOS_EDITABLES = [
   "r_grado", "r_especialidad", "r_ultimoAnioAprobado", "r_colegioAnterior",
   "r_hermanosCentroeducativo", "r_nombresHermanos", "r_nivelAcademico",
 
-  "r_partidaNumero", "r_folio", "r_tomo", "r_libro",
-
   "r_computadoraMineducyt", "r_internet",
   "r_tallaCamisa", "r_tallaPantalon", "r_tallaBlusa", "r_tallaFalda", "r_tallaZapatos",
 
-  "r_vacunaCovid", "r_enfermedad", "r_cualEnfermedad", "r_medicamento", "r_otros",
+  "r_enfermedad", "r_cualEnfermedad", "r_medicamento", "r_otros",
 
   "r_responsable", "r_parentesco", "r_duiResponsable", "r_telefonoResponsable",
   "r_whatsappResponsable", "r_correoResponsable",
@@ -580,6 +564,7 @@ const CAMPOS_EDITABLES = [
 ];
 
 window.modificarcampos = async function () {
+  if (guardando) return;
   if (!matriculaActual) {
     alert("⚠️ Primero busque una matrícula.");
     return;
@@ -596,6 +581,8 @@ window.modificarcampos = async function () {
       el.setAttribute("aria-readonly", "false");
       el.classList.add("campo-editable");
     });
+    // Restricciones del formulario; la edad queda automática
+    activarEdicion(resultadosSection, { bloqueados: ["edad"] });
 
     modoEdicion = true;
     if (btnModificar) btnModificar.textContent = "💾 Guardar cambios";
@@ -603,42 +590,60 @@ window.modificarcampos = async function () {
     return;
   }
 
-  // --- Si YA está en modo edición: guardar cambios ---
+  // --- Si YA está en modo edición: validar y guardar cambios ---
+  const cambios = {};
+  CAMPOS_EDITABLES.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const clave = id.replace("r_", "");
+    const valor = el.value.trim();
+    if (valor !== String(matriculaActual[clave] ?? "")) cambios[clave] = valor;
+  });
+
+  if (!Object.keys(cambios).length) {
+    bloquearCampos();
+    mostrarMensaje("No hay cambios para guardar.", "info");
+    return;
+  }
+
+  const errores = validarMatricula(resultadosSection, Object.keys(cambios));
+  if (!Object.keys(errores).length && "nie" in cambios) {
+    try {
+      const existente = await buscarMatriculaPorNie(cambios.nie);
+      if (existente) errores.nie = "Ya existe una matrícula con ese NIE";
+    } catch (error) {
+      console.error("No se pudo comprobar si el NIE ya existe:", error);
+    }
+    if (errores.nie) marcarErrorCampo(resultadosSection, "nie", errores.nie);
+  }
+  if (Object.keys(errores).length) {
+    const lista = Object.keys(errores).map((k) => etiquetaCampo(resultadosSection, k)).join(", ");
+    mostrarMensaje(`⚠️ Corrija los campos marcados en rojo: ${lista}.`, "warning");
+    return;
+  }
+
+  guardando = true;
   try {
     mostrarMensaje("⏳ Guardando cambios...", "loading");
 
-    const datosActualizados = {};
-    CAMPOS_EDITABLES.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        const clave = id.replace("r_", "");
-        datosActualizados[clave] = el.value.trim();
-      }
-    });
-
-    await actualizarMatricula(matriculaActual, datosActualizados);
+    await actualizarMatricula(matriculaActual, cambios);
 
     // Actualizar copia local con los nuevos valores
-    matriculaActual = { ...matriculaActual, ...datosActualizados };
+    matriculaActual = { ...matriculaActual, ...cambios };
 
-    document.querySelectorAll("#resultadosBusqueda input.campo-lectura").forEach((el) => {
-      el.readOnly = true;
-      el.setAttribute("readonly", "");
-      el.setAttribute("aria-readonly", "true");
-      el.classList.remove("campo-editable");
-    });
+    bloquearCampos();
 
-    modoEdicion = false;
-    if (btnModificar) btnModificar.textContent = "✏️ Modificar";
-
-    // Refrescar la ficha imprimible/PDF con los datos ya actualizados
-    generarFichaImprimir(matriculaActual, matriculaActual);
+    // Refrescar alertas y la ficha imprimible/PDF con los datos ya actualizados
+    mostrarResultados(matriculaActual);
+    await generarFichaImprimir(matriculaActual, matriculaActual);
 
     mostrarMensaje("✅ Cambios guardados correctamente.", "success");
 
   } catch (error) {
     console.error("❌ Error al guardar cambios:", error);
     mostrarMensaje("❌ Error al guardar: " + error.message, "error");
+  } finally {
+    guardando = false;
   }
 };
 
@@ -667,9 +672,13 @@ window.eliminarMatricula = async function() {
 };
 
 /* =========================================================
-   BUSCAR CON ENTER
+   BUSCAR CON ENTER + RESTRICCIÓN DEL NIE (solo números, máx. 12)
 ========================================================= */
+restringirBuscadorNie(document.getElementById("filtroNie"), 12);
+
 if (buscarInput) {
+  restringirBuscadorNie(buscarInput, 12);
+
   buscarInput.addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -691,7 +700,7 @@ console.log("✅ Administrador INCO cargado correctamente");
 mostrarMensaje("💡 Ingrese el NIE del estudiante para buscar.", "info");
 
 // ===============================
-// CAMBIAR ENTRE MENÚS (solo Matrícula y Reportes)
+// CAMBIAR ENTRE MENÚS
 // ===============================
 
 window.mostrarMatriculas = function () {
@@ -796,10 +805,6 @@ formNuevoUsuario?.addEventListener("submit", async (event) => {
 
 /* =========================================================
    REPORTES: BUSCAR CON FILTROS
-   (Se corrigió: ya no se referencia "filtroTipo", que no
-   existe en el HTML. Ese era el motivo por el que el botón
-   "Buscar" de Reportes no hacía nada: la función tronaba en
-   la primera línea al intentar leer .value de null.)
 ========================================================= */
 window.buscarReportes = async function () {
   const mensajeReportes = document.getElementById("mensajeReportes");

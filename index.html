@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Sistema de Matrícula INCO</title>
+  <title>Matrícula - Instituto Nacional de Comercio</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,63 +24,17 @@
          Desarrollo de Software, Servicios Turísticos, Bachillerato General, Bachillerato en Modalidades Flexibles. 
          Bachilleres con capacidad competitiva al mundo empresarial y emprendedor; 
          además orientarlos para que puedan elegir una carrera de Educación Superior que les permita lograr el éxito personal y profesional.
+        </p>
       </div>
 
       <div class="opciones-ingreso">
-        <!-- Ahora ambos botones abren un modal en vez de navegar directo -->
-        <button type="button" class="btn-ingreso btn-ingresar" id="btnIngresar">
-          Ingresar
-        </button>
-
-        <button type="button" class="btn-ingreso btn-admin" id="btnAdministrador">
-          Administrador
+        <button type="button" class="btn-ingreso btn-ingresar" id="btnMatricula">
+          Matrícula
         </button>
       </div>
 
     </section>
   </main>
-
-  <!-- ================= MODAL: INGRESAR (Nuevo) ================= -->
-  <div class="modal-overlay oculto" id="modalIngresar" aria-hidden="true">
-    <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloModalIngresar">
-      <button type="button" class="modal-cerrar" data-cerrar="modalIngresar" aria-label="Cerrar">&times;</button>
-      <h3 id="tituloModalIngresar" class="modal-titulo">Tipo de ingreso</h3>
-      <p class="modal-subtitulo">Seleccione una opción para continuar</p>
-
-<div class="modal-opciones">
-
-    <button
-        type="button"
-        class="btn-ingreso btn-tipo-nuevo"
-        id="btnNuevoIngreso">
-        Nuevo Ingreso
-    </button>
-
-</div>
-    </div>
-  </div>
-
-  <!-- ================= MODAL: ACCESO DEL PERSONAL ================= -->
-  <div class="modal-overlay oculto" id="modalAdministrador" aria-hidden="true">
-    <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloModalAdmin">
-      <button type="button" class="modal-cerrar" data-cerrar="modalAdministrador" aria-label="Cerrar">&times;</button>
-      <h3 id="tituloModalAdmin" class="modal-titulo">Acceso al personal</h3>
-      <p class="modal-subtitulo">Administradores y docentes</p>
-
-      <form class="admin-login" id="formAdministrador" novalidate>
-        <label for="usuarioAdmin">Correo electrónico</label>
-        <input type="email" id="usuarioAdmin" name="usuario" placeholder="ejemplo@clases.edu.sv" autocomplete="username" required>
-
-        <label for="passwordAdmin">Contraseña</label>
-        <input type="password" id="passwordAdmin" name="password" autocomplete="current-password" required>
-
-        <p class="mensaje-login" id="mensajeAdmin"></p>
-
-        <button type="submit" class="btn-ingreso btn-admin">Acceder</button>
-      </form>
-
-    </div>
-  </div>
 
   <script type="module" src="app.js"></script>
 </body>

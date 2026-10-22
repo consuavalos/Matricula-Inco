@@ -1,9 +1,19 @@
 import { protegerRuta } from "../auth-guard.js";
 import {
+  activarEdicion,
+  desactivarEdicion,
+  etiquetaCampo,
+  marcarErrorCampo,
+  nieBusquedaValido,
+  restringirBuscadorNie,
+  validarMatricula,
+} from "../validacion-matricula.js";
+import {
   actualizarMatricula,
   buscarMatriculaPorNie,
   guardarDocumentos as guardarDocumentosSupabase,
 } from "../supabase-data.js";
+
 const accesoDocente = await protegerRuta("docente");
 
 if (accesoDocente) {
@@ -14,19 +24,9 @@ if (accesoDocente) {
 
 /* =========================================================
    INDICACIONES / DOCUMENTOS REQUERIDOS POR AÑO
-   -----------------------------------------------------------
-   Transcritas de los volantes físicos del instituto.
-   NOTA IMPORTANTE (léase antes de modificar):
-   - El punto 1 de "tercer_antiguo" no se alcanzaba a leer
-     completo en la foto (estaba cortado). Se completó siguiendo
-     el mismo patrón de "segundo_antiguo" (certificado de los
-     años previos). Verifique este punto contra el volante físico.
-   - No existe en los datos actuales un campo "jornada" para
-     distinguir Bachillerato General de "Modalidades Flexibles",
-     así que para 2° año "nuevo ingreso" se usó la lista de
-     Modalidades Flexibles (es la única lista disponible para
-     ese caso). El docente puede corregir el tipo manualmente
-     con el selector si no aplica.
+   (Si se edita aquí, editar igual en Administrador/admin.js)
+   NOTA: el punto 1 de "tercer_antiguo" se completó siguiendo el
+   patrón de "segundo_antiguo"; verifique contra el volante físico.
 ========================================================= */
 const INDICACIONES = {
   primer_nuevo: {
@@ -77,7 +77,6 @@ const INDICACIONES = {
   },
 };
 
-// Indicaciones de presentación que aplican a todos los años (volante de recepción de documentos)
 const INDICACIONES_GENERALES = [
   "El o la estudiante debe venir acompañado de su padre, madre o responsable",
   "Las fotografías deben venir con el nombre completo del estudiante escrito",
@@ -101,18 +100,46 @@ const mensajeDocumentos = document.getElementById("mensajeDocumentos");
 let matriculaActual = null;
 let guardandoCambios = false;
 
+/* Todos los campos de la ficha (mismo listado que el administrador + tipoIngreso) */
+const CAMPOS_FICHA = [
+  "numeroFicha", "fechaMatricula", "nie",
+  "primerApellido", "segundoApellido", "primerNombre", "segundoNombre",
+  "fechaNacimiento", "edad", "sexo", "telefonoEstudiante", "correoEstudiantil", "correoPersonal",
+  "grado", "tipoIngreso", "especialidad", "ultimoAnioAprobado", "colegioAnterior",
+  "hermanosCentroeducativo", "nombresHermanos", "nivelAcademico",
+  "computadoraMineducyt", "internet",
+  "tallaCamisa", "tallaPantalon", "tallaBlusa", "tallaFalda", "tallaZapatos",
+  "enfermedad", "cualEnfermedad", "medicamento", "otros",
+  "responsable", "parentesco", "duiResponsable", "telefonoResponsable",
+  "whatsappResponsable", "correoResponsable",
+  "madreNombre", "madreOcupacion", "madreLugarTrabajo", "madreDui",
+  "madreLugarNacimiento", "madreFechaNacimiento", "madreCelular",
+  "padreNombre", "padreOcupacion", "padreLugarTrabajo", "padreDui",
+  "padreLugarNacimiento", "padreFechaNacimiento", "padreCelular",
+];
+
+/* =========================================================
+   EDICIÓN DE DATOS
+========================================================= */
 function establecerEdicion(activa) {
   resultadosSection.querySelectorAll('input[id^="r_"]').forEach((campo) => {
     campo.readOnly = !activa;
     campo.classList.toggle("campo-editable", activa);
   });
-  document.getElementById("btnModificar").style.display = activa ? "none" : "";
-  document.getElementById("btnGuardarCambios").style.display = activa ? "" : "none";
-  document.getElementById("btnCancelarCambios").style.display = activa ? "" : "none";
+  document.getElementById("btnModificar").style.display = activa ? "none" : "inline-block";
+  document.getElementById("btnGuardarCambios").style.display = activa ? "inline-block" : "none";
+  document.getElementById("btnCancelarCambios").style.display = activa ? "inline-block" : "none";
+  // Aplica / quita las mismas restricciones del formulario de Nuevo Ingreso
+  if (activa) activarEdicion(resultadosSection);
+  else desactivarEdicion(resultadosSection);
 }
 
 window.modificarcampos = function () {
-  if (!accesoDocente || !matriculaActual || guardandoCambios) return;
+  if (!accesoDocente || guardandoCambios) return;
+  if (!matriculaActual) {
+    alert("⚠️ Primero busque un estudiante.");
+    return;
+  }
   establecerEdicion(true);
   mostrarMensaje("Puede modificar los datos y luego guardar los cambios o cancelar.", "info");
 };
@@ -137,14 +164,26 @@ window.guardarCambios = async function () {
     mostrarMensaje("No hay cambios para guardar.", "info");
     return;
   }
-  if ("nie" in cambios && !cambios.nie) {
-    mostrarMensaje("El NIE del estudiante no puede quedar vacío.", "warning");
+  // Mismas reglas del formulario de Nuevo Ingreso, aplicadas a lo que se modificó
+  const errores = validarMatricula(resultadosSection, Object.keys(cambios));
+  if (!Object.keys(errores).length && "nie" in cambios) {
+    try {
+      const existente = await buscarMatriculaPorNie(cambios.nie);
+      if (existente) errores.nie = "Ya existe una matrícula con ese NIE";
+    } catch (error) {
+      console.error("No se pudo comprobar si el NIE ya existe:", error);
+    }
+    if (errores.nie) marcarErrorCampo(resultadosSection, "nie", errores.nie);
+  }
+  if (Object.keys(errores).length) {
+    const lista = Object.keys(errores).map((k) => etiquetaCampo(resultadosSection, k)).join(", ");
+    mostrarMensaje(`Corrija los campos marcados en rojo: ${lista}.`, "warning");
     return;
   }
   guardandoCambios = true;
   const controles = [document.getElementById("btnGuardarCambios"), document.getElementById("btnCancelarCambios"), buscarInput];
-  controles.forEach(control => control.disabled = true);
-  resultadosSection.querySelectorAll('input[id^="r_"]').forEach(campo => campo.readOnly = true);
+  controles.forEach((control) => (control.disabled = true));
+  resultadosSection.querySelectorAll('input[id^="r_"]').forEach((campo) => (campo.readOnly = true));
   mostrarMensaje("Guardando cambios…", "loading");
   try {
     await actualizarMatricula(matriculaActual, cambios);
@@ -158,7 +197,7 @@ window.guardarCambios = async function () {
     mostrarMensaje(`No se pudieron guardar los cambios: ${error.message}`, "error");
   } finally {
     guardandoCambios = false;
-    controles.forEach(control => control.disabled = false);
+    controles.forEach((control) => (control.disabled = false));
   }
 };
 
@@ -170,9 +209,6 @@ Object.keys(INDICACIONES).forEach((clave) => {
   tipoIndicacionesSelect.appendChild(opt);
 });
 
-/* =========================================================
-   DETECTAR TIPO DE INDICACIONES SEGÚN GRADO / TIPO DE INGRESO
-========================================================= */
 function detectarTipoIndicaciones(grado, tipoIngreso) {
   const g = (grado || "").toLowerCase();
   const t = (tipoIngreso || "").toLowerCase();
@@ -184,7 +220,7 @@ function detectarTipoIndicaciones(grado, tipoIngreso) {
 }
 
 /* =========================================================
-   FUNCIÓN PRINCIPAL DE BÚSQUEDA
+   BÚSQUEDA POR NIE
 ========================================================= */
 window.buscarMatricula = async function () {
   if (!accesoDocente || guardandoCambios) return;
@@ -192,6 +228,12 @@ window.buscarMatricula = async function () {
 
   if (!valor) {
     mostrarMensaje("⚠️ Escriba un NIE.", "warning");
+    ocultarResultados();
+    return;
+  }
+
+  if (!nieBusquedaValido(valor)) {
+    mostrarMensaje("⚠️ El NIE solo debe contener números (máximo 12 dígitos).", "warning");
     ocultarResultados();
     return;
   }
@@ -212,7 +254,6 @@ window.buscarMatricula = async function () {
     mostrarMensaje("✅ Estudiante encontrado.", "success");
     mostrarResultados(encontrado);
     prepararDocumentos(encontrado);
-
   } catch (error) {
     console.error("❌ Error:", error);
     mostrarMensaje("❌ Error: " + error.message, "error");
@@ -221,7 +262,7 @@ window.buscarMatricula = async function () {
 };
 
 /* =========================================================
-   MOSTRAR RESULTADOS (FICHA DEL ESTUDIANTE)
+   MOSTRAR RESULTADOS (VISTA EN PANTALLA)
 ========================================================= */
 function mostrarResultados(data) {
   if (resultadosSection) {
@@ -233,34 +274,29 @@ function mostrarResultados(data) {
   seccionDocumentos.style.display = "none";
   document.getElementById("btnToggleDocumentos").textContent = "📄 Documentos";
 
-  const campos = {
-    r_numeroFicha: data.numeroFicha || "",
-    r_fechaMatricula: data.fechaMatricula || "",
-    r_nie: data.nie || "",
-    r_primerApellido: data.primerApellido || "",
-    r_segundoApellido: data.segundoApellido || "",
-    r_primerNombre: data.primerNombre || "",
-    r_segundoNombre: data.segundoNombre || "",
-    r_fechaNacimiento: data.fechaNacimiento || "",
-    r_edad: data.edad || "",
-    r_sexo: data.sexo || "",
-    r_telefonoEstudiante: data.telefonoEstudiante || "",
-    r_correoEstudiantil: data.correoEstudiantil || "",
-    r_grado: data.grado || "",
-    r_tipoIngreso: data.tipoIngreso || "",
-    r_especialidad: data.especialidad || "",
-    r_colegioAnterior: data.colegioAnterior || "",
-    r_responsable: data.responsable || "",
-    r_parentesco: data.parentesco || "",
-    r_duiResponsable: data.duiResponsable || "",
-    r_telefonoResponsable: data.telefonoResponsable || "",
-    r_correoResponsable: data.correoResponsable || "",
-  };
+  const alertas = document.getElementById("alertasAcademicas");
+  if (alertas) {
+    const alerta = obtenerAlertaAcademica(data);
+    alertas.innerHTML = alerta.html === "—" ? "" : alerta.html;
+    alertas.hidden = alerta.html === "—";
+  }
 
-  Object.keys(campos).forEach((id) => {
-    const elemento = document.getElementById(id);
-    if (elemento) elemento.value = campos[id];
+  CAMPOS_FICHA.forEach((clave) => {
+    const elemento = document.getElementById("r_" + clave);
+    if (elemento) elemento.value = data[clave] || "";
   });
+
+  const fotoContenedor = document.getElementById("r_fotoContenedor");
+  const fotoImg = document.getElementById("r_fotoEstudiante");
+  if (fotoContenedor && fotoImg) {
+    if (data.fotoURL) {
+      fotoImg.src = data.fotoURL;
+      fotoContenedor.style.display = "block";
+    } else {
+      fotoImg.removeAttribute("src");
+      fotoContenedor.style.display = "none";
+    }
+  }
 }
 
 /* =========================================================
@@ -325,25 +361,18 @@ function crearItemChecklist(grupo, indice, texto, previo) {
 
   contenido.appendChild(label);
   contenido.appendChild(inputNota);
-
   wrapper.appendChild(checkbox);
   wrapper.appendChild(contenido);
 
   return wrapper;
 }
 
-/* =========================================================
-   CAMBIAR TIPO DE INDICACIONES MANUALMENTE
-========================================================= */
 window.cambiarTipoIndicaciones = function () {
   const tipo = tipoIndicacionesSelect.value;
   const guardado = matriculaActual?.documentosChecklist || null;
   renderChecklist(tipo, guardado);
 };
 
-/* =========================================================
-   MOSTRAR / OCULTAR BLOQUE DE DOCUMENTOS
-========================================================= */
 window.toggleDocumentos = function () {
   if (!matriculaActual) {
     alert("⚠️ Primero busque un estudiante.");
@@ -360,9 +389,6 @@ window.toggleDocumentos = function () {
   }
 };
 
-/* =========================================================
-   GUARDAR CHECKLIST DE DOCUMENTOS EN FIRESTORE
-========================================================= */
 window.guardarDocumentos = async function () {
   if (!matriculaActual) {
     alert("⚠️ Primero busque un estudiante.");
@@ -406,7 +432,7 @@ window.guardarDocumentos = async function () {
 };
 
 /* =========================================================
-   FUNCIONES DE MENSAJES
+   MENSAJES
 ========================================================= */
 function mostrarMensaje(texto, tipo = "info") {
   if (!mensajeBusqueda) return;
@@ -435,10 +461,34 @@ function ocultarResultados() {
   matriculaActual = null;
 }
 
+/* Alertas de repitiente / sobreedad (mismas reglas que el administrador) */
+function obtenerAlertaAcademica(matricula) {
+  const grado = matricula.grado || "";
+  const ultimoAnio = matricula.ultimoAnioAprobado || "";
+  const edad = Number.parseInt(matricula.edad, 10);
+  const maximaPorGrado = { "Primer Año": 18, "Segundo Año": 20, "Tercer Año": 20 };
+  const esSobreedad = Number.isFinite(edad) && (
+    (grado === "Primer Año" && edad >= maximaPorGrado[grado]) ||
+    (grado !== "Primer Año" && edad > maximaPorGrado[grado])
+  );
+
+  const esRepitiente = !!grado && ultimoAnio === grado;
+  const alertas = [];
+  if (esRepitiente) alertas.push('<span class="badge-alerta badge-repitiente">Repitiendo año</span>');
+  if (esSobreedad) alertas.push('<span class="badge-alerta badge-sobreedad">Sobreedad</span>');
+  return {
+    claseFila: esSobreedad ? "fila-sobreedad" : (esRepitiente ? "fila-repitiente" : ""),
+    html: alertas.length ? alertas.join(" ") : "—",
+    esRepitiente,
+    esSobreedad,
+  };
+}
+
 /* =========================================================
    BUSCAR CON ENTER
 ========================================================= */
 if (buscarInput) {
+  restringirBuscadorNie(buscarInput, 12);
   buscarInput.addEventListener("keypress", function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
